@@ -20,6 +20,10 @@ from dataset.dataset_utils import save_pkl
 from models import SUPPROTED_MODELS
 from models.model_utils import Channel
 
+import time
+sys.path.append(osp.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+from utils.setup_log import setup_log, git_info, pcolor
+
 
 def eval_vic(args, dataset, model, evaluator):
     idx = -1
@@ -63,6 +67,9 @@ def eval_single(args, dataset, model, evaluator):
 
 
 if __name__ == "__main__":
+    setup_log('v2x_eval.log')
+    time_beg_eval = time.time()
+
     parser = argparse.ArgumentParser(conflict_handler="resolve")
     add_arguments(parser)
     args, _ = parser.parse_known_args()
@@ -104,3 +111,7 @@ if __name__ == "__main__":
         pipe = Channel()
         model = SUPPROTED_MODELS[args.model](args, pipe)
         eval_vic(args, dataset, model, evaluator)
+
+    time_end_eval = time.time()
+    logging.warning(f'eval.py elapsed {time_end_eval - time_beg_eval:.6f} seconds')
+    print(pcolor(f'eval.py elapsed {time_end_eval - time_beg_eval:.6f} seconds', 'yellow'))
