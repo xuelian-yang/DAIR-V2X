@@ -22,6 +22,9 @@ If you want to visualize the 3d label in point cloud, you can run following comm
 
 ```bash
 cd ${dair_v2x_root}
+pcd_path=/mnt/datax/xuelian-yang/DAIR-V2X/data/DAIR-V2X/cooperative-vehicle-infrastructure/infrastructure-side/velodyne/000009.pcd
+label_json_path=/mnt/datax/xuelian-yang/DAIR-V2X/data/DAIR-V2X/cooperative-vehicle-infrastructure/infrastructure-side/label/virtuallidar/000009.json
+
 python tools/visualize/vis_label_in_3d.py --task pcd_label --pcd-path ${pcd_path} --label-path ${label_json_path}
 ```
 - **--task** refers to the type of task you choose to visualize, the optional values are '**fusion**', '**single**', '**pcd_label**'. 

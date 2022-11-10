@@ -8,6 +8,7 @@ from v2x_utils.transformation_utils import Coord_transformation
 from v2x_utils import get_trans, box_translation
 import json
 import numpy as np
+import logging
 
 
 class Frame(dict, ABC):

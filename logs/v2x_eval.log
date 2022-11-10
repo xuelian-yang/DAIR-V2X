@@ -1,0 +1,86 @@
+[2022-11-10 16:32:43,311] INFO : setup_log.py[109] setup_log >>> @/mnt/datax/xuelian-yang/DAIR-V2X/v2x/../utils/../logs/v2x_eval.log created at 2022-11-10 16:32:43.311434
+[2022-11-10 16:32:43,414] INFO : setup_log.py[113] setup_log >>>   <class 'git.repo.base.Repo'>
+[2022-11-10 16:32:43,414] INFO : setup_log.py[114] setup_log >>>   repo.head.commit.hexsha: b938a37dc07a1007ed5557120b899c99081a0392
+[2022-11-10 16:32:43,414] INFO : setup_log.py[115] setup_log >>>   is_dirty():              True
+[2022-11-10 16:32:43,418] INFO : eval.py[84] <module> >>> === parse_known_args: ===
+[2022-11-10 16:32:43,419] INFO : eval.py[72] print_configs >>> input               : ../data/DAIR-V2X/cooperative-vehicle-infrastructure
+[2022-11-10 16:32:43,419] INFO : eval.py[72] print_configs >>> output              : ../cache/vic-late-lidar
+[2022-11-10 16:32:43,419] INFO : eval.py[72] print_configs >>> split               : val
+[2022-11-10 16:32:43,419] INFO : eval.py[72] print_configs >>> split_data_path     : ../data/split_datas/cooperative-split-data.json
+[2022-11-10 16:32:43,419] INFO : eval.py[72] print_configs >>> dataset             : vic-sync
+[2022-11-10 16:32:43,419] INFO : eval.py[72] print_configs >>> k                   : 2
+[2022-11-10 16:32:43,419] INFO : eval.py[72] print_configs >>> pred_classes        : ['car']
+[2022-11-10 16:32:43,419] INFO : eval.py[72] print_configs >>> model               : late_fusion
+[2022-11-10 16:32:43,419] INFO : eval.py[72] print_configs >>> device              : 0
+[2022-11-10 16:32:43,419] INFO : eval.py[72] print_configs >>> debug               : False
+[2022-11-10 16:32:43,419] INFO : eval.py[72] print_configs >>> quiet               : False
+[2022-11-10 16:32:43,419] INFO : eval.py[72] print_configs >>> save_point_cloud    : False
+[2022-11-10 16:32:43,419] INFO : eval.py[72] print_configs >>> save_image          : False
+[2022-11-10 16:32:43,420] INFO : eval.py[72] print_configs >>> extended_range      : [0.0, -39.68, -3.0, 100.0, 39.68, 1.0]
+[2022-11-10 16:32:43,420] INFO : eval.py[72] print_configs >>> sensortype          : lidar
+[2022-11-10 16:32:43,420] INFO : eval.py[72] print_configs >>> eval_single         : False
+[2022-11-10 16:32:43,421] WARNING : eval.py[91] <module> >>> === parse_args: ===
+[2022-11-10 16:32:43,421] INFO : eval.py[72] print_configs >>> input               : ../data/DAIR-V2X/cooperative-vehicle-infrastructure
+[2022-11-10 16:32:43,421] INFO : eval.py[72] print_configs >>> output              : ../cache/vic-late-lidar
+[2022-11-10 16:32:43,421] INFO : eval.py[72] print_configs >>> split               : val
+[2022-11-10 16:32:43,421] INFO : eval.py[72] print_configs >>> split_data_path     : ../data/split_datas/cooperative-split-data.json
+[2022-11-10 16:32:43,422] INFO : eval.py[72] print_configs >>> dataset             : vic-sync
+[2022-11-10 16:32:43,422] INFO : eval.py[72] print_configs >>> k                   : 2
+[2022-11-10 16:32:43,422] INFO : eval.py[72] print_configs >>> pred_classes        : ['car']
+[2022-11-10 16:32:43,422] INFO : eval.py[72] print_configs >>> model               : late_fusion
+[2022-11-10 16:32:43,422] INFO : eval.py[72] print_configs >>> device              : 0
+[2022-11-10 16:32:43,422] INFO : eval.py[72] print_configs >>> debug               : False
+[2022-11-10 16:32:43,422] INFO : eval.py[72] print_configs >>> quiet               : False
+[2022-11-10 16:32:43,422] INFO : eval.py[72] print_configs >>> save_point_cloud    : False
+[2022-11-10 16:32:43,422] INFO : eval.py[72] print_configs >>> save_image          : False
+[2022-11-10 16:32:43,422] INFO : eval.py[72] print_configs >>> extended_range      : [0.0, -39.68, -3.0, 100.0, 39.68, 1.0]
+[2022-11-10 16:32:43,422] INFO : eval.py[72] print_configs >>> sensortype          : lidar
+[2022-11-10 16:32:43,422] INFO : eval.py[72] print_configs >>> eval_single         : False
+[2022-11-10 16:32:43,422] INFO : eval.py[72] print_configs >>> inf_config_path     : ../configs/vic3d/late-fusion-pointcloud/pointpillars/trainval_config_i.py
+[2022-11-10 16:32:43,423] INFO : eval.py[72] print_configs >>> inf_model_path      : ../configs/vic3d/late-fusion-pointcloud/pointpillars/vic3d_latefusion_inf_pointpillars_596784ad6127866fcfb286301757c949.pth
+[2022-11-10 16:32:43,423] INFO : eval.py[72] print_configs >>> veh_config_path     : ../configs/vic3d/late-fusion-pointcloud/pointpillars/trainval_config_v.py
+[2022-11-10 16:32:43,423] INFO : eval.py[72] print_configs >>> veh_model_path      : ../configs/vic3d/late-fusion-pointcloud/pointpillars/vic3d_latefusion_veh_pointpillars_a70fa05506bf3075583454f58b28177f.pth
+[2022-11-10 16:32:43,423] INFO : eval.py[72] print_configs >>> no_comp             : False
+[2022-11-10 16:32:43,423] INFO : eval.py[72] print_configs >>> overwrite_cache     : True
+[2022-11-10 16:32:43,423] INFO : eval.py[107] <module> >>> loading dataset
+[2022-11-10 16:32:43,423] WARNING : dair_v2x_for_detection.py[224] __init__ >>> VICSyncDataset::__init__(..)
+[2022-11-10 16:32:43,424] WARNING : dair_v2x_for_detection.py[127] __init__ >>> VICDataset::__init__(..)
+[2022-11-10 16:32:43,675] INFO : file_io.py[14] load_json >>> load_json(../data/DAIR-V2X/cooperative-vehicle-infrastructure/infrastructure-side/data_info.json)
+[2022-11-10 16:32:43,779] INFO : file_io.py[14] load_json >>> load_json(../data/DAIR-V2X/cooperative-vehicle-infrastructure/vehicle-side/data_info.json)
+[2022-11-10 16:32:43,827] INFO : file_io.py[14] load_json >>> load_json(../data/DAIR-V2X/cooperative-vehicle-infrastructure/cooperative/data_info.json)
+[2022-11-10 16:32:43,827] WARNING : dair_v2x_for_detection.py[198] get_split >>> VICDataset::get_split(..)
+[2022-11-10 16:32:43,985] WARNING : filter_utils.py[34] __call__ >>> RectFilter::__call__(..)
+[2022-11-10 16:32:51,253] INFO : dair_v2x_for_detection.py[226] __init__ >>> VIC-Sync val dataset, overall 1795 frames
+[2022-11-10 16:32:51,253] INFO : eval.py[117] <module> >>> loading evaluator
+[2022-11-10 16:32:51,253] INFO : eval_utils.py[281] debug_info >>> pred_classes: ['car']
+[2022-11-10 16:32:51,253] INFO : eval_utils.py[282] debug_info >>> all_preds: {'3d': {'car': {0.3: [], 0.5: [], 0.7: []}}, 'bev': {'car': {0.3: [], 0.5: [], 0.7: []}}}
+[2022-11-10 16:32:51,253] INFO : eval.py[120] <module> >>> loading model
+[2022-11-10 16:32:51,253] WARNING : mmdet3d_anymodel_anymodality_late.py[316] __init__ >>> LateFusion::__init__(..)
+[2022-11-10 16:32:51,254] WARNING : mmdet3d_anymodel_anymodality_late.py[67] __init__ >>> LateFusionInf::__init__(..)
+[2022-11-10 16:32:51,254] WARNING : mmdet3d_anymodel_anymodality_late.py[204] __init__ >>> LateFusionVeh::__init__( Namespace(dataset='vic-sync', debug=False, device=0, eval_single=False, extended_range=[0.0, -39.68, -3.0, 100.0, 39.68, 1.0], inf_config_path='../configs/vic3d/late-fusion-pointcloud/pointpillars/trainval_config_i.py', inf_model_path='../configs/vic3d/late-fusion-pointcloud/pointpillars/vic3d_latefusion_inf_pointpillars_596784ad6127866fcfb286301757c949.pth', input='../data/DAIR-V2X/cooperative-vehicle-infrastructure', k=2, model='late_fusion', no_comp=False, output='../cache/vic-late-lidar', overwrite_cache=True, pred_classes=['car'], quiet=False, save_image=False, save_point_cloud=False, sensortype='lidar', split='val', split_data_path='../data/split_datas/cooperative-split-data.json', veh_config_path='../configs/vic3d/late-fusion-pointcloud/pointpillars/trainval_config_v.py', veh_model_path='../configs/vic3d/late-fusion-pointcloud/pointpillars/vic3d_latefusion_veh_pointpillars_a70fa05506bf3075583454f58b28177f.pth') )
+[2022-11-10 16:32:51,254] WARNING : late_fusion_utils.py[188] __init__ >>> SpaceCompensator::__init__(..)
+[2022-11-10 16:32:51,254] WARNING : late_fusion_utils.py[150] __init__ >>> EuclidianMatcher::__init__(..)
+[2022-11-10 16:32:51,254] WARNING : late_fusion_utils.py[254] __init__ >>> TimeCompensator::__init__(..)
+[2022-11-10 16:32:51,263] WARNING : eval.py[29] eval_vic >>> eval_vic(.., <class 'dair_v2x_for_detection.VICSyncDataset'>
+[2022-11-10 16:32:51,266] WARNING : mmdet3d_anymodel_anymodality_late.py[334] forward >>> LateFusion::forward(..)
+[2022-11-10 16:32:51,266] WARNING : mmdet3d_anymodel_anymodality_late.py[156] forward >>> forward(..)
+[2022-11-10 16:32:51,266] WARNING : mmdet3d_anymodel_anymodality_late.py[74] pred >>> LateFusionInf::pred(..)
+[2022-11-10 16:32:51,266] INFO : mmdet3d_anymodel_anymodality_late.py[160] forward >>> building model
+[2022-11-10 16:32:54,421] WARNING : mmdet3d_anymodel_anymodality_late.py[292] forward >>> LateFusionVeh::forward(..)
+[2022-11-10 16:32:54,421] WARNING : mmdet3d_anymodel_anymodality_late.py[210] pred >>> LateFusionVeh::pred(..)
+[2022-11-10 16:32:54,421] INFO : mmdet3d_anymodel_anymodality_late.py[296] forward >>> building model
+[2022-11-10 16:32:54,624] WARNING : late_fusion_utils.py[47] __init__ >>> BBoxList::__init__(..)
+[2022-11-10 16:32:54,625] WARNING : late_fusion_utils.py[156] match >>> EuclidianMatcher::match(..)
+[2022-11-10 16:32:54,625] WARNING : filter_utils.py[9] diff_label_filt >>> diff_label_filt(..)
+[2022-11-10 16:32:54,636] WARNING : late_fusion_utils.py[278] __init__ >>> BasicFuser::__init__(..)
+[2022-11-10 16:32:54,636] WARNING : late_fusion_utils.py[290] fuse >>> BasicFuser::fuse(..)
+[2022-11-10 16:32:54,637] WARNING : eval_utils.py[285] add_frame >>> add_frame(...)
+[2022-11-10 16:32:54,637] WARNING : eval_utils.py[195] compute_type >>> compute_type(..)
+[2022-11-10 16:32:54,637] WARNING : eval_utils.py[176] build_label_list >>> build_label_list(..)
+[2022-11-10 16:32:54,637] WARNING : eval_utils.py[120] box3d_iou >>> box3d_iou(..)
+[2022-11-10 16:32:54,637] WARNING : eval_utils.py[86] convex_hull_intersection >>> convex_hull_intersection(..)
+[2022-11-10 16:32:54,637] WARNING : eval_utils.py[39] polygon_clip >>> polygon_clip(..)
+[2022-11-10 16:47:53,748] WARNING : eval_utils.py[296] print_ap >>> print_ap( 3d, micro )
+[2022-11-10 16:47:53,748] WARNING : eval_utils.py[248] compute_ap >>> compute_ap(..)
+[2022-11-10 16:47:54,272] WARNING : eval_utils.py[296] print_ap >>> print_ap( bev, micro )
+[2022-11-10 16:47:54,790] WARNING : eval.py[130] <module> >>> eval.py elapsed 911.375874 seconds

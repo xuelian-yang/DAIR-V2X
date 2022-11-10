@@ -82,6 +82,8 @@ mkdir ./data/DAIR-V2X
 ln -s ${DAIR-V2X-C_DATASET_ROOT}/cooperative-vehicle-infrastructure ${dair-v2x_root}/dair-v2x/data/DAIR-V2X
 
 ln -s /mnt/datax/Datasets/DAIR-V2X/DAIR-V2X-C/cooperative-vehicle-infrastructure /mnt/datax/xuelian-yang/DAIR-V2X/data/DAIR-V2X
+
+ln -sf /mnt/datax/Datasets/DAIR-V2X-Extracted/DAIR-V2X-C/cooperative-vehicle-infrastructure /mnt/datax/xuelian-yang/DAIR-V2X/data/DAIR-V2X
 ```
 
 #### Checkpoint Preparation

@@ -26,6 +26,7 @@ from utils.setup_log import setup_log, git_info, pcolor
 
 
 def eval_vic(args, dataset, model, evaluator):
+    logging.warning(f'eval_vic(.., {type(dataset)}')
     idx = -1
     for VICFrame, label, filt in tqdm(dataset):
         idx += 1
@@ -54,6 +55,7 @@ def eval_vic(args, dataset, model, evaluator):
 
 
 def eval_single(args, dataset, model, evaluator):
+    logging.warnging(f'eval_single(..)')
     for frame, label, filt in tqdm(dataset):
         pred = model(frame, filt)
         if args.sensortype == "camera":
@@ -65,6 +67,12 @@ def eval_single(args, dataset, model, evaluator):
     evaluator.print_ap("3d")
     evaluator.print_ap("bev")
 
+def print_configs(args):
+    for v in vars(args):
+        logging.info(f'{v:<20s}: {vars(args)[v]}')
+
+def quick_exit():
+    exit(0)
 
 if __name__ == "__main__":
     setup_log('v2x_eval.log')
@@ -73,9 +81,15 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(conflict_handler="resolve")
     add_arguments(parser)
     args, _ = parser.parse_known_args()
+    logging.info("=== parse_known_args: ===")
+    print_configs(args)
+
     # add model-specific arguments
     SUPPROTED_MODELS[args.model].add_arguments(parser)
     args = parser.parse_args()
+
+    logging.warning("=== parse_args: ===")
+    print_configs(args)
 
     if args.quiet:
         level = logging.ERROR
@@ -99,6 +113,7 @@ if __name__ == "__main__":
         sensortype=args.sensortype,
         extended_range=extended_range,
     )
+    logging.warning(f'dataset: {type(dataset)}')
 
     logger.info("loading evaluator")
     evaluator = Evaluator(args.pred_classes)

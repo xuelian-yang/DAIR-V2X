@@ -2,8 +2,16 @@ import numpy as np
 from scipy.spatial import ConvexHull
 from functools import cmp_to_key
 import logging
+logger = logging.getLogger(__name__)
+'''
+from utils.setup_log import DuplicateFilter
 
 logger = logging.getLogger(__name__)
+dup_filter = DuplicateFilter()
+logger.addFilter(dup_filter)
+'''
+
+from utils.setup_log import trace_logger
 
 from config import superclass
 
@@ -28,6 +36,7 @@ def polygon_clip(subjectPolygon, clipPolygon):
     Return:
       a list of (x,y) vertex point for the intersection polygon.
     """
+    trace_logger.warning(f'polygon_clip(..)')
 
     def inside(p):
         return (cp2[0] - cp1[0]) * (p[1] - cp1[1]) > (cp2[1] - cp1[1]) * (p[0] - cp1[0])
@@ -74,6 +83,7 @@ def convex_hull_intersection(p1, p2):
     p1,p2 are a list of (x,y) tuples of hull vertices.
     return a list of (x,y) for the intersection and its volume
     """
+    trace_logger.warning(f'convex_hull_intersection(..)')
     inter_p = polygon_clip(p1, p2)
     if inter_p is not None:
         hull_inter = ConvexHull(inter_p)
@@ -107,6 +117,7 @@ def box3d_iou(corners1, corners2, debug=False):
         iou:    3D bounding box IoU
         iou_2d: bird's eye view 2D bounding box IoU
     """
+    trace_logger.warning(f'box3d_iou(..)')
     # corner points are in counter clockwise order
     rect1 = [(corners1[i, 0], corners1[i, 1]) for i in range(4)]
     rect2 = [(corners2[i, 0], corners2[i, 1]) for i in range(4)]
@@ -162,6 +173,7 @@ def cmp(pred1, pred2):
 
 
 def build_label_list(annos, filt):
+    trace_logger.warning(f'build_label_list(..)')
     result_list = []
     for i in range(len(annos["labels_3d"])):
         if superclass[annos["labels_3d"][i]] == filt:
@@ -180,6 +192,7 @@ def compute_type(gt_annos, pred_annos, cla, iou_threshold, view):
         result_pred_annos:    List, [{'box': Array[8, 3], 'score': Float, 'type': 'tp'/'fp'}]
         num_gt:               Int, number of ground truths
     """
+    trace_logger.warning(f'compute_type(..)')
     gt_annos = build_label_list(gt_annos, filt=cla)
     pred_annos = build_label_list(pred_annos, filt=cla)
     pred_annos = sorted(pred_annos, key=cmp_to_key(cmp))
@@ -232,6 +245,7 @@ def compute_ap(pred_annos, num_gt):
     Output:
         mAP:        Float, evaluation result
     """
+    trace_logger.warning(f'compute_ap(..)')
     pred_annos = sorted(pred_annos, key=cmp_to_key(cmp))
     num_tp = np.zeros(len(pred_annos))
     for i in range(len(pred_annos)):
@@ -261,7 +275,15 @@ class Evaluator(object):
                 self.all_preds["bev"][pred_class][iou] = []
                 self.gt_num[pred_class][iou] = 0
 
+        self.debug_info()
+
+    def debug_info(self):
+        logging.info(f'pred_classes: {self.pred_classes}')
+        logging.info(f'all_preds: {self.all_preds}')
+
     def add_frame(self, pred, label):
+        trace_logger.warning(f'add_frame(...)')
+        # exit(0)
         for pred_class in self.pred_classes:
             for iou in iou_threshold_dict[pred_class]:
                 pred_result, num_label, num_tp = compute_type(label, pred, pred_class, iou, "3d")  # test
@@ -271,6 +293,7 @@ class Evaluator(object):
                 # logger.debug("iou: {}, tp: {}, all_pred: {}".format(iou, num_tp, len(pred["labels_3d"])))
 
     def print_ap(self, view, type="micro"):
+        logging.warning(f'print_ap( {view}, {type} )')
         for pred_class in self.pred_classes:
             for iou in iou_threshold_dict[pred_class]:
                 ap = compute_ap(self.all_preds[view][pred_class][iou], self.gt_num[pred_class][iou])

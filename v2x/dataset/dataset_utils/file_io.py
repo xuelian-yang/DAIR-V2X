@@ -4,11 +4,14 @@ import pickle
 import numpy as np
 from pypcd import pypcd
 import mmcv
+import logging
 
 
-def load_json(path):
+def load_json(path, debug=False):
     with open(path, mode="r") as f:
         data = json.load(f)
+    if debug:
+        logging.info(f'load_json({path})')
     return data
 
 

@@ -3,6 +3,10 @@ import pickle
 from scipy.optimize import linear_sum_assignment
 from sklearn.linear_model import LinearRegression
 
+import logging
+from utils.setup_log import trace_logger
+
+
 inf = 1e42  # infinity
 
 
@@ -40,6 +44,7 @@ class BBoxList(object):
         class_score: numpy array [num_boxes, num_classes], predicted probability of each class
         t: float, timestamp
         """
+        trace_logger.warning(f'BBoxList::__init__(..)')
         self.num_boxes = boxes.shape[0]
         self.num_dims = boxes.shape[2]
         self.num_classes = class_score.shape[1] if class_score is not None else None
@@ -75,6 +80,7 @@ class BBoxList(object):
 
 class StaticBBoxList(BBoxList):
     def __init__(self, filename, data_format="8points_pkl"):
+        trace_logger.warning(f'StaticBBoxList::__init__(..)')
         if data_format == "8points_pkl":
             """
             data = {
@@ -141,11 +147,13 @@ class Matcher(object):
 
 class EuclidianMatcher(Matcher):
     def __init__(self, filter_func=None, delta_x=0.0, delta_y=0.0, delta_z=0.0):
+        trace_logger.warning(f'EuclidianMatcher::__init__(..)')
         super(EuclidianMatcher, self).__init__()
         self.filter_func = filter_func
         self.delta = [delta_x, delta_y, delta_z]
 
     def match(self, frame1, frame2):
+        trace_logger.warning(f'EuclidianMatcher::match(..)')
         cost_matrix = np.zeros((frame1.num_boxes, frame2.num_boxes))
         for i in range(frame1.num_boxes):
             for j in range(frame2.num_boxes):
@@ -177,6 +185,7 @@ class Compensator(object):
 
 class SpaceCompensator(Compensator):
     def __init__(self, minx=-1.0, maxx=1.0, miny=-1.0, maxy=1.0, iters=2, steps=5):
+        trace_logger.warning(f'SpaceCompensator::__init__(..)')
         self.minx = minx
         self.maxx = maxx
         self.miny = miny
@@ -185,6 +194,7 @@ class SpaceCompensator(Compensator):
         self.steps = steps
 
     def compensate(self, frame1, frame2):
+        trace_logger.warning(f'SpaceCompensator::compensate(..)')
         minx = self.minx
         maxx = self.maxx
         miny = self.miny
@@ -241,9 +251,11 @@ class SpaceCompensator(Compensator):
 
 class TimeCompensator(Compensator):
     def __init__(self, matcher):
+        trace_logger.warning(f'TimeCompensator::__init__(..)')
         self.matcher = matcher
 
     def compensate(self, frame1, frame2, delta1, delta2):
+        trace_logger.warning(f'TimeCompensator::compensate(..)')
         ind_prev, ind_cur, _ = self.matcher.match(frame1, frame2)
         if len(ind_prev) < 1:
             avg_offset = np.mean(frame2.center, axis=0) - np.mean(frame1.center, axis=0)
@@ -263,6 +275,7 @@ class TimeCompensator(Compensator):
 
 class BasicFuser(object):
     def __init__(self, perspective, trust_type, retain_type):
+        trace_logger.warning(f'BasicFuser::__init__(..)')
         # perspective:
         # infrastructure / vehicle
         # trust type:
@@ -274,6 +287,7 @@ class BasicFuser(object):
         self.retain_type = retain_type
 
     def fuse(self, frame_r, frame_v, ind_r, ind_v):
+        trace_logger.warning(f'BasicFuser::fuse(..)')
         if self.perspective == "infrastructure":
             frame1 = frame_r
             frame2 = frame_v

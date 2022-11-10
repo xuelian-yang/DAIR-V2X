@@ -7,18 +7,20 @@ logger = logging.getLogger(__name__)
 from base_dataset import DAIRV2XDataset, get_annos, build_path_to_info
 from dataset.dataset_utils import load_json, InfFrame, VehFrame, VICFrame, Label
 from v2x_utils import Filter, RectFilter, id_cmp, id_to_str, get_trans, box_translation
+from utils.setup_log import trace_logger
 
 
 class DAIRV2XI(DAIRV2XDataset):
     def __init__(self, path, args, split="train", sensortype="lidar", extended_range=None):
+        trace_logger.warning(f'DAIRV2XI::__init__(..)')
         super().__init__(path, args, split, extended_range)
-        data_infos = load_json(osp.join(path, "infrastructure-side/data_info.json"))
+        data_infos = load_json(osp.join(path, "infrastructure-side/data_info.json"), True)
         split_path = args.split_data_path
         data_infos = self.get_split(split_path, split, data_infos)
 
         self.inf_path2info = build_path_to_info(
             "",
-            load_json(osp.join(path, "infrastructure-side/data_info.json")),
+            load_json(osp.join(path, "infrastructure-side/data_info.json"), True),
             sensortype,
         )
 
@@ -36,6 +38,7 @@ class DAIRV2XI(DAIRV2XDataset):
                 get_annos(path + "/infrastructure-side", "", inf_frame, "camera")
 
     def get_split(self, split_path, split, data_infos):
+        trace_logger.warning(f'DAIRV2XI::get_split(..)')
         if osp.exists(split_path):
             split_data = load_json(split_path)
         else:
@@ -65,8 +68,9 @@ class DAIRV2XI(DAIRV2XDataset):
 
 class DAIRV2XV(DAIRV2XDataset):
     def __init__(self, path, args, split="train", sensortype="lidar", extended_range=None):
+        trace_logger.warning(f'DAIRV2XV::__init__(..)')
         super().__init__(path, args, split, extended_range)
-        data_infos = load_json(osp.join(path, "vehicle-side/data_info.json"))
+        data_infos = load_json(osp.join(path, "vehicle-side/data_info.json", True))
         split_path = args.split_data_path
         data_infos = self.get_split(split_path, split, data_infos)
 
@@ -90,6 +94,7 @@ class DAIRV2XV(DAIRV2XDataset):
                 get_annos(path + "/vehicle-side", "", veh_frame, "camera")
 
     def get_split(self, split_path, split, data_infos):
+        trace_logger.warning(f'DAIRV2XV::get_split(..)')
         if osp.exists(split_path):
             split_data = load_json(split_path)
         else:
@@ -119,20 +124,21 @@ class DAIRV2XV(DAIRV2XDataset):
 
 class VICDataset(DAIRV2XDataset):
     def __init__(self, path, args, split="train", sensortype="lidar", extended_range=None):
+        trace_logger.warning(f'VICDataset::__init__(..)')
         super().__init__(path + "/cooperative", args, split, extended_range)
         self.path = path
         self.inf_path2info = build_path_to_info(
             "infrastructure-side",
-            load_json(osp.join(path, "infrastructure-side/data_info.json")),
+            load_json(osp.join(path, "infrastructure-side/data_info.json"), True),
             sensortype,
         )
         self.veh_path2info = build_path_to_info(
             "vehicle-side",
-            load_json(osp.join(path, "vehicle-side/data_info.json")),
+            load_json(osp.join(path, "vehicle-side/data_info.json"), True),
             sensortype,
         )
 
-        frame_pairs = load_json(osp.join(path, "cooperative/data_info.json"))
+        frame_pairs = load_json(osp.join(path, "cooperative/data_info.json"), True)
         split_path = args.split_data_path
         frame_pairs = self.get_split(split_path, split, frame_pairs)
 
@@ -179,14 +185,17 @@ class VICDataset(DAIRV2XDataset):
             self.data.append(tup)
 
     def query_veh_segment(self, frame, sensortype="lidar", previous_only=False):
+        trace_logger.warning(f'VICDataset::query_veh_segment(..)')
         segment = self.veh_frames[frame.batch_id]
         return [f for f in segment if f.id[sensortype] < frame.id[sensortype] or not previous_only]
 
     def query_inf_segment(self, frame, sensortype="lidar", previous_only=False):
+        trace_logger.warning(f'VICDataset::query_id_segment(..)')
         segment = self.inf_frames[frame.batch_id]
         return [f for f in segment if f.id[sensortype] < frame.id[sensortype] or not previous_only]
 
     def get_split(self, split_path, split, frame_pairs):
+        trace_logger.warning(f'VICDataset::get_split(..)')
         if osp.exists(split_path):
             split_data = load_json(split_path)
         else:
@@ -212,6 +221,7 @@ class VICDataset(DAIRV2XDataset):
 
 class VICSyncDataset(VICDataset):
     def __init__(self, path, args, split="train", sensortype="lidar", extended_range=None):
+        trace_logger.warning(f'VICSyncDataset::__init__(..)')
         super().__init__(path, args, split, sensortype, extended_range)
         logger.info("VIC-Sync {} dataset, overall {} frames".format(split, len(self.data)))
 
@@ -224,6 +234,7 @@ class VICSyncDataset(VICDataset):
 
 class VICAsyncDataset(VICDataset):
     def __init__(self, path, args, split="train", sensortype="lidar", extended_range=None):
+        trace_logger.warning(f'VICAsyncDataset::__init__(..)')
         super().__init__(path, args, split, sensortype, extended_range)
         self.k = args.k
         self.async_data = []
@@ -247,6 +258,7 @@ class VICAsyncDataset(VICDataset):
         return len(self.async_data)
 
     def prev_inf_frame(self, index, sensortype="lidar"):
+        trace_logger.warning(f'VICAsyncDataset::prev_inf_frame(index={index}, {sensortype}')
         if sensortype == "lidar":
             cur = self.inf_path2info["infrastructure-side/velodyne/" + index + ".pcd"]
             if (

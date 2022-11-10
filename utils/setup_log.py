@@ -7,6 +7,35 @@ from termcolor import colored
 # pip install gitpython
 import git
 
+'''
+class DuplicateFilter:
+    def __init__(self, logger):
+        self.msgs = set()
+        self.logger = logger
+
+    def filter(self, record):
+        msg = str(record.msg)
+        is_duplicate = msg in self.msgs
+        if not is_duplicate:
+            self.msgs.add(msg)
+        return not is_duplicate
+
+    def __enter__(self):
+        self.logger.addFilter(self)
+
+    def __exit__(self, exc_type, exc_val, ext_tb):
+        self.logger.removeFilter(self)
+'''
+
+class DuplicateFilter(object):
+    def __init__(self):
+        self.msgs = set()
+
+    def filter(self, record):
+        rv = record.msg not in self.msgs
+        self.msgs.add(record.msg)
+        return rv
+
 
 def pcolor(string, color, on_color=None, attrs=None):
     """
@@ -89,9 +118,14 @@ def setup_log(log_name):
     print(f'  repo.head.commit.hexsha: {hexsha}')
     print(f'  is_dirty():              {is_dirty}')
 
-    if is_dirty:
+    if is_dirty and False:
         git_diff = subprocess.check_output(['git', 'diff'])
         logging.info(f'  git diff\n{git_diff.decode()}')
         print(f'  git diff\n{git_diff.decode()}')
 
     print('\n===== log_file: {}\n'.format(get_log_file))
+
+
+trace_logger = logging.getLogger(__name__)
+dup_filter = DuplicateFilter()
+trace_logger.addFilter(dup_filter)

@@ -2,6 +2,7 @@ import os.path as osp
 import numpy as np
 import torch.nn as nn
 import logging
+from utils.setup_log import trace_logger
 
 logger = logging.getLogger(__name__)
 
@@ -63,12 +64,14 @@ def get_box_info(result):
 
 class LateFusionInf(nn.Module):
     def __init__(self, args, pipe):
+        logging.warning(f'LateFusionInf::__init__( {args}, ..)')
         super().__init__()
         self.model = None
         self.args = args
         self.pipe = pipe
 
     def pred(self, frame, trans, pred_filter):
+        trace_logger.warning(f'LateFusionInf::pred(..)')
         if self.args.sensortype == "lidar":
             id = frame.id["lidar"]
             logger.debug("infrastructure pointcloud_id: {}".format(id))
@@ -150,6 +153,7 @@ class LateFusionInf(nn.Module):
         return pred_dict, id
 
     def forward(self, data, trans, pred_filter, prev_inf_frame_func=None):
+        trace_logger.warning(f'LateFusionInf::forward(..)')
         try:
             pred_dict, id = self.pred(data, trans, pred_filter)
         except Exception:
@@ -197,11 +201,13 @@ class LateFusionInf(nn.Module):
 
 class LateFusionVeh(nn.Module):
     def __init__(self, args):
+        logging.warning(f'LateFusionVeh::__init__( {args} )')
         super().__init__()
         self.model = None
         self.args = args
 
     def pred(self, frame, trans, pred_filter):
+        trace_logger.warning(f'LateFusionVeh::pred(..)')
         if self.args.sensortype == "lidar":
             id = frame.id["lidar"]
             logger.debug("vehicle pointcloud_id: {}".format(id))
@@ -283,6 +289,7 @@ class LateFusionVeh(nn.Module):
         return pred_dict, id
 
     def forward(self, data, trans, pred_filter):
+        trace_logger.warning(f'LateFusionVeh::forward(..)')
         try:
             pred_dict, id = self.pred(data, trans, pred_filter)
         except Exception:
@@ -306,6 +313,7 @@ class LateFusion(BaseModel):
         parser.add_argument("--overwrite-cache", action="store_true")
 
     def __init__(self, args, pipe):
+        logging.warning(f'LateFusion::__init__( {args}, ..)')
         super().__init__()
         self.pipe = pipe
         self.inf_model = LateFusionInf(args, pipe)
@@ -323,6 +331,7 @@ class LateFusion(BaseModel):
         mkdir(osp.join(args.output, "result"))
 
     def forward(self, vic_frame, filt, prev_inf_frame_func=None, *args):
+        trace_logger.warning(f'LateFusion::forward(..)')
         id_inf = self.inf_model(
             vic_frame.infrastructure_frame(),
             vic_frame.transform(from_coord="Infrastructure_lidar", to_coord="Vehicle_lidar"),
