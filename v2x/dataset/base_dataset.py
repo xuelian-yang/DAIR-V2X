@@ -61,6 +61,9 @@ def build_path_to_info(prefix, data, sensortype="lidar"):
                 continue
             path = osp.join(prefix, elem["image_path"])
             path2info[path] = elem
+    elif sensortype == "lidar+camera":
+        # TODO
+        raise NotImplemented
     return path2info
 
 

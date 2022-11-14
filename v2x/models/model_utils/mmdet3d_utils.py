@@ -9,6 +9,8 @@ from mmcv.parallel import collate, scatter
 from mmcv.runner import load_checkpoint
 from os import path as osp
 
+from utils.setup_log import trace_logger
+
 from mmdet3d.core import (
     Box3DMode,
     CameraInstance3DBoxes,
@@ -30,6 +32,7 @@ def convert_SyncBN(config):
          config (str or :obj:`mmcv.Config`): Config file path or the config
             object.
     """
+    trace_logger.warning(f'convert_SyncBN(..)')
     if isinstance(config, dict):
         for item in config:
             if item == "norm_cfg":
@@ -52,6 +55,7 @@ def init_model(config, checkpoint=None, device="cuda:0"):
     Returns:
         nn.Module: The constructed detector.
     """
+    trace_logger.warning(f'init_model(..)')
     if isinstance(config, str):
         config = mmcv.Config.fromfile(config)
     elif not isinstance(config, mmcv.Config):
@@ -84,6 +88,7 @@ def inference_detector(model, pcd):
     Returns:
         tuple: Predicted results and data from pipeline.
     """
+    trace_logger.warning(f'inference_detector(.., {pcd})')
     cfg = model.cfg
     device = next(model.parameters()).device  # model device
     # build the data pipeline
@@ -134,6 +139,7 @@ def inference_multi_modality_detector(model, pcd, image, ann_file):
     Returns:
         tuple: Predicted results and data from pipeline.
     """
+    trace_logger.warning(f'inference_multi_modality_detector(.., {pcd}, {image}, {ann_file})')
     cfg = model.cfg
     device = next(model.parameters()).device  # model device
     # build the data pipeline
@@ -208,6 +214,7 @@ def inference_mono_3d_detector(model, image, ann_file):
     Returns:
         tuple: Predicted results and data from pipeline.
     """
+    trace_logger.warning(f'inference_mono_3d_detector({type(model)}, {image}, {ann_file})')
     cfg = model.cfg
     device = next(model.parameters()).device  # model device
     # build the data pipeline

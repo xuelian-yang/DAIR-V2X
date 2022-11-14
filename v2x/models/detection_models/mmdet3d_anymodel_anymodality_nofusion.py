@@ -10,6 +10,8 @@ from model_utils import init_model, inference_detector, inference_mono_3d_detect
 from base_model import BaseModel
 from mmdet3d_anymodel_anymodality_late import LateFusionVeh, LateFusionInf
 
+from utils.setup_log import trace_logger
+
 
 class SingleSide(BaseModel):
     @staticmethod
@@ -20,12 +22,14 @@ class SingleSide(BaseModel):
         parser.add_argument("--overwrite-cache", action="store_true")
 
     def __init__(self, args):
+        trace_logger.warning(f'SingleSide::__init__( {args} )')
         super().__init__()
         self.model = None
         self.args = args
         mkdir(osp.join(args.output, "preds"))
 
     def pred(self, frame, pred_filter):
+        trace_logger.warning(f'SingleSide::pred(..)')
         id = frame.id["camera"]
         if self.args.dataset == "dair-v2x-i":
             input_path = osp.join(self.args.input, "infrastructure-side")
@@ -87,6 +91,7 @@ class SingleSide(BaseModel):
         return pred_dict
 
     def forward(self, frame, pred_filter):
+        trace_logger.warning(f'SingleSide::forward(..)')
         try:
             pred_dict = self.pred(frame, pred_filter)
         except Exception:
@@ -111,11 +116,13 @@ class InfOnly(BaseModel):
         parser.add_argument("--overwrite-cache", action="store_true")
 
     def __init__(self, args, pipe):
+        trace_logger.warning(f'InfOnly::__init__( {args}, .. )')
         super().__init__()
         self.model = LateFusionInf(args, pipe)
         self.pipe = pipe
 
     def forward(self, vic_frame, filt, offset, *args):
+        trace_logger.warning(f'InfOnly::forward(..)')
         self.model(
             vic_frame.infrastructure_frame(),
             vic_frame.transform(from_coord="Infrastructure_lidar", to_coord="Vehicle_lidar"),
@@ -139,11 +146,13 @@ class VehOnly(BaseModel):
         parser.add_argument("--overwrite-cache", action="store_true")
 
     def __init__(self, args, pipe):
+        trace_logger.warning(f'VehOnly::__init__( {args}, .. )')
         super().__init__()
         self.model = LateFusionVeh(args)
         self.pipe = pipe
 
     def forward(self, vic_frame, filt, *args):
+        trace_logger.warning(f'VehOnly::forward(..)')
         pred = self.model(vic_frame.vehicle_frame(), None, filt)[0]
         return {
             "boxes_3d": np.array(pred["boxes_3d"]),

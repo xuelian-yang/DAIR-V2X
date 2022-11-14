@@ -31,6 +31,7 @@ class DAIRV2XI(DAIRV2XDataset):
             gt_label["camera"] = Label(osp.join(path, "infrastructure-side", elem["label_camera_std_path"]), filt)
             gt_label["lidar"] = Label(osp.join(path, "infrastructure-side", elem["label_lidar_std_path"]), filt)
 
+            # data format
             self.data.append((InfFrame(path, elem), gt_label, filt))
 
             if sensortype == "camera":

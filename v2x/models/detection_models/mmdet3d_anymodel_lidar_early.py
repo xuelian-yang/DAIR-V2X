@@ -4,6 +4,7 @@ import os
 import numpy as np
 import torch.nn as nn
 import logging
+from utils.setup_log import trace_logger
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +38,7 @@ from v2x_utils import (
 
 
 def get_box_info(result):
+    trace_logger.warning(f'get_box_info(..)')
     if len(result[0]["boxes_3d"].tensor) == 0:
         box_lidar = np.zeros((1, 8, 3))
         box_ry = np.zeros(1)
@@ -49,6 +51,7 @@ def get_box_info(result):
 
 
 def gen_pred_dict(id, timestamp, box, arrow, points, score, label):
+    trace_logger.warning(f'get_pred_dict(..)')
     if len(label) == 0:
         score = [-2333]
         label = [-1]
@@ -74,6 +77,7 @@ class EarlyFusion(BaseModel):
         parser.add_argument("--overwrite-cache", action="store_true")
 
     def __init__(self, args, pipe):
+        trace_logger.warning(f'EarlyFusion::__init__(..)')
         super().__init__()
         self.model = LateFusionVeh(args)
         self.args = args
@@ -88,6 +92,7 @@ class EarlyFusion(BaseModel):
         mkdir(osp.join(args.output, "result"))
 
     def forward(self, vic_frame, filt, prev_inf_frame_func=None, *args):
+        trace_logger.warning(f'EarlyFusion::forward(..)')
         save_path = osp.join(vic_frame.path, "vehicle-side", "cache")
         if not osp.exists(save_path):
             mkdir(save_path)
@@ -123,12 +128,14 @@ class EarlyFusion(BaseModel):
 
 class LateFusionVeh(nn.Module):
     def __init__(self, args):
+        trace_logger.warning(f'LateFusionVeh::__init__( {args} )')
         super().__init__()
         self.model = None
         self.args = args
         self.args.overwrite_cache = True
 
     def pred(self, frame, trans, pred_filter):
+        trace_logger.warning(f'LateFusionVeh::pred(..)')
         if self.args.sensortype == "lidar":
             id = frame.id["lidar"]
             logger.debug("vehicle pointcloud_id: {}".format(id))
@@ -192,6 +199,7 @@ class LateFusionVeh(nn.Module):
             raise Exception
 
     def forward(self, data, trans, pred_filter):
+        trace_logger.warning(f'LateFusionVeh::forward(..)')
         try:
             pred_dict, id = self.pred(data, trans, pred_filter)
         except Exception:

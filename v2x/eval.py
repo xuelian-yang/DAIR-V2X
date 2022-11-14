@@ -30,9 +30,12 @@ def eval_vic(args, dataset, model, evaluator):
     idx = -1
     for VICFrame, label, filt in tqdm(dataset):
         idx += 1
+        if idx > 10:
+            break
         # if idx % 10 != 0:
         #     continue
         try:
+            # print(pcolor(f'{dataset.data[idx][0]}', 'yellow'))
             veh_id = dataset.data[idx][0]["vehicle_pointcloud_path"].split("/")[-1].replace(".pcd", "")
         except Exception:
             veh_id = VICFrame["vehicle_pointcloud_path"].split("/")[-1].replace(".pcd", "")
@@ -56,7 +59,11 @@ def eval_vic(args, dataset, model, evaluator):
 
 def eval_single(args, dataset, model, evaluator):
     logging.warnging(f'eval_single(..)')
+    idx = -1
     for frame, label, filt in tqdm(dataset):
+        idx += 1
+        if idx > 10:
+            break
         pred = model(frame, filt)
         if args.sensortype == "camera":
             evaluator.add_frame(pred, label["camera"])
@@ -67,12 +74,11 @@ def eval_single(args, dataset, model, evaluator):
     evaluator.print_ap("3d")
     evaluator.print_ap("bev")
 
+
 def print_configs(args):
     for v in vars(args):
         logging.info(f'{v:<20s}: {vars(args)[v]}')
 
-def quick_exit():
-    exit(0)
 
 if __name__ == "__main__":
     setup_log('v2x_eval.log')
@@ -118,11 +124,14 @@ if __name__ == "__main__":
     logger.info("loading evaluator")
     evaluator = Evaluator(args.pred_classes)
 
-    logger.info("loading model")
+    logger.info(f"loading model of {args.eval_single}")
     if args.eval_single:
+        # SingleSide  / LateFusionVeh
+        logging.warning(f'eval_single')
         model = SUPPROTED_MODELS[args.model](args)
         eval_single(args, dataset, model, evaluator)
     else:
+        # InfOnly / VehOnly / EarlyFusion / LateFusionInf / LateFusion
         pipe = Channel()
         model = SUPPROTED_MODELS[args.model](args, pipe)
         eval_vic(args, dataset, model, evaluator)
