@@ -50,7 +50,26 @@ def gen_pred_dict(id, timestamp, box, arrow, points, score, label):
     return save_dict
 
 
+def gen_pred_dict_ex(id, timestamp, box, arrow, points, score, label, raw_boxes_3d):
+    if len(label) == 0:
+        score = [-2333]
+        label = [-1]
+    save_dict = {
+        "info": id,
+        "timestamp": timestamp,
+        "boxes_3d": box.tolist(),
+        "arrows": arrow.tolist(),
+        "scores_3d": score,
+        "labels_3d": label,
+        "points": points.tolist(),
+        "raw_boxes_3d": raw_boxes_3d,
+    }
+    return save_dict
+
+
 def get_box_info(result):
+    trace_logger.warning(f'get_box_info( boxes_3d: {result[0]["boxes_3d"].tensor.shape}, labels_3d: {result[0]["labels_3d"].shape}, scores_3d: {result[0]["scores_3d"].shape}, {result} )')
+    # trace_logger.warning(f'get_box_info( {type(result)}: {result}')
     if len(result[0]["boxes_3d"].tensor) == 0:
         box_lidar = np.zeros((1, 8, 3))
         box_ry = np.zeros(1)
@@ -100,6 +119,11 @@ class LateFusionInf(nn.Module):
             annos = osp.join(self.args.input, "infrastructure-side", "annos", id + ".json")
             result, _ = inference_mono_3d_detector(self.model, tmp, annos)
         box, box_ry, box_center, arrow_ends = get_box_info(result)
+        trace_logger.warning(f'\n\tbox:        {type(box)} {box.shape}'
+                             f'\n\tbox_ry:     {type(box_ry)} {box_ry.shape}'
+                             f'\n\tbox_center: {type(box_center)} {box_center.shape}'
+                             f'\n\tarrow_ends: {type(arrow_ends)} {arrow_ends.shape}'
+                             f'\n\tresult:     {type(result)} {result[0]["boxes_3d"].tensor.shape}')
 
         # Convert to other coordinate
         if trans is not None:
@@ -143,6 +167,7 @@ class LateFusionInf(nn.Module):
         else:
             save_data = np.array([])
 
+        '''
         pred_dict = gen_pred_dict(
             id,
             frame_timestamp,
@@ -151,6 +176,17 @@ class LateFusionInf(nn.Module):
             save_data,
             result[0]["scores_3d"].tolist(),
             result[0]["labels_3d"].tolist(),
+        )
+        '''
+        pred_dict = gen_pred_dict_ex(
+            id,
+            frame_timestamp,
+            box,
+            np.concatenate([box_center, arrow_ends], axis=1),
+            save_data,
+            result[0]["scores_3d"].tolist(),
+            result[0]["labels_3d"].tolist(),
+            result[0]["boxes_3d"].tensor.tolist(),
         )
         save_pkl(pred_dict, path)
 
@@ -296,6 +332,7 @@ class LateFusionVeh(nn.Module):
         else:
             save_data = np.array([])
 
+        '''
         pred_dict = gen_pred_dict(
             id,
             frame_timestamp,
@@ -305,6 +342,19 @@ class LateFusionVeh(nn.Module):
             result[0]["scores_3d"].tolist(),
             result[0]["labels_3d"].tolist(),
         )
+        '''
+
+        pred_dict = gen_pred_dict_ex(
+            id,
+            frame_timestamp,
+            box,
+            np.concatenate([box_center, arrow_ends], axis=1),
+            save_data,
+            result[0]["scores_3d"].tolist(),
+            result[0]["labels_3d"].tolist(),
+            result[0]["boxes_3d"].tensor.tolist(),
+        )
+
         save_pkl(pred_dict, path)
 
         return pred_dict, id

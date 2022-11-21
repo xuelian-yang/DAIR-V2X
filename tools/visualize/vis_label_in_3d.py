@@ -28,7 +28,7 @@ def draw_boxes3d(
     text_scale: three number tuple
     color_list: RGB tuple
     """
-    trace_logger.warning(f'draw_boxes3d( .. )')
+    trace_logger.warning(f'draw_boxes3d( {boxes3d.shape} )')
     num = len(boxes3d)
     for n in range(num):
         if arrows is not None:
@@ -83,7 +83,7 @@ def draw_boxes3d(
 
 
 def read_bin(path):
-    trace_logger.warning(f'read_bin( .. )')
+    trace_logger.warning(f'read_bin( {path} )')
     pointcloud = np.fromfile(path, dtype=np.float32, count=-1).reshape([-1, 4])
     print(pointcloud.shape)
     x = pointcloud[:, 0]
@@ -93,7 +93,7 @@ def read_bin(path):
 
 
 def read_pcd(pcd_path):
-    trace_logger.warning(f'read_pcd( .. )')
+    trace_logger.warning(f'read_pcd( {pcd_path} )')
     pcd = pypcd.PointCloud.from_path(pcd_path)
 
     x = np.transpose(pcd.pc_data["x"])
@@ -240,12 +240,24 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.task == "fusion":
+        '''
+        data_root=/mnt/datax/xuelian-yang/DAIR-V2X/cache/vic-late-lidar
+        id=3144
+        python tools/visualize/vis_label_in_3d.py --task fusion --path ${data_root} --id ${id}
+        '''
         plot_pred_fusion(args)
 
     if args.task == "single":
         plot_pred_single(args)
 
     if args.task == "pcd_label":
+        '''
+        data_root=/mnt/datax/xuelian-yang/DAIR-V2X/data/DAIR-V2X/cooperative-vehicle-infrastructure/infrastructure-side
+        pcd_path=${data_root}/velodyne/000009.pcd
+        label_json_path=${data_root}/label/virtuallidar/000009.json
+
+        python tools/visualize/vis_label_in_3d.py --task pcd_label --pcd-path ${pcd_path} --label-path ${label_json_path}
+        '''
         plot_label_pcd(args)
 
     time_end_vis_3d = time.time()

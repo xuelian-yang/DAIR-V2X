@@ -33,20 +33,20 @@ def id_to_str(id, digits=6):
 
 
 def load_pkl(path):
-    trace_logger.warning(f'load_pkl( .. )')
+    trace_logger.warning(f'load_pkl( {path} )')
     with open(path, "rb") as f:
         return pickle.load(f)
 
 
 def read_json(path):
-    trace_logger.warning(f'read_json( .. )')
+    trace_logger.warning(f'read_json( {path} )')
     with open(path, "r") as f:
         my_json = json.load(f)
         return my_json
 
 
 def get_label(label):
-    trace_logger.warning(f'get_label( .. )')
+    trace_logger.warning(f'get_label( {label} )')
     h = float(label[0]["h"])
     w = float(label[0]["w"])
     length = float(label[0]["l"])
@@ -70,7 +70,7 @@ def get_lidar2cam(calib):
 
 
 def get_cam_calib_intrinsic(calib_path):
-    trace_logger.warning(f'get_cam_calib_intrinsic( .. )')
+    trace_logger.warning(f'get_cam_calib_intrinsic( {calib_path} )')
     my_json = read_json(calib_path)
     cam_K = my_json["cam_K"]
     calib = np.zeros([3, 4])
@@ -115,7 +115,7 @@ def plot_rect3d_on_img(img, num_rects, rect_corners, color=(0, 255, 0), thicknes
 
 
 def get_rgb(img_path):
-    trace_logger.warning(f'get_rgb( .. )')
+    trace_logger.warning(f'get_rgb( {img_path} )')
     return cv2.imread(img_path)
 
 
