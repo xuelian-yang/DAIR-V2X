@@ -4,6 +4,7 @@
 /data/road-side
 /data/vehicle-side
 /cache
+/cache*
 *.pth
-logs/*
 *.log
+/logs

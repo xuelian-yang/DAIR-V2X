@@ -1,7 +1,13 @@
 import os
 import os.path as osp
+import sys
+import time
+import logging
 import argparse
 from vis_utils import get_cam_8_points, read_json, vis_label_in_img
+
+sys.path.append(osp.join(osp.dirname(osp.abspath(__file__)), '../../'))
+from utils.setup_log import setup_log, pcolor, trace_logger
 
 
 def vis_label_in_image(path, save_path):
@@ -9,6 +15,8 @@ def vis_label_in_image(path, save_path):
     path: The root directory of the visualization image, infrastructure-side/vehicle-side.
     save_path: Output path of the visualized image.
     """
+    trace_logger.warning(f'vis_label_in_image( {path}, {save_path} )')
+
     # get data_info
     path_data_infos = read_json(osp.join(path, "data_info.json"))
     for data_info in path_data_infos:
@@ -37,6 +45,11 @@ def vis_label_in_image(path, save_path):
         camera_8_points_list = get_cam_8_points(
             labels, lidar2cam_path
         )  # Convert the label to the 8 points of the cameara coordinate system
+        if len(camera_8_points_list) <= 0:
+            logging.warning(f'  skip empty label: {label_path}')
+            print(pcolor(f'  skip empty label: {label_path}', 'red'))
+            continue
+
         vis_label_in_img(camera_8_points_list, image_path, cam_instrinsic_path, save_path)
 
 
@@ -51,6 +64,9 @@ def add_arguments(parser):
 
 
 if __name__ == "__main__":
+    setup_log('tools_visualize_vis_label_in_image.log')
+    time_beg_vis_image = time.time()
+
     parser = argparse.ArgumentParser()
     add_arguments(parser)
     args = parser.parse_args()
@@ -59,3 +75,7 @@ if __name__ == "__main__":
         os.mkdir(args.output_file)
 
     vis_label_in_image(args.path, args.output_file)
+
+    time_end_vis_image = time.time()
+    logging.warning(f'vis_label_in_image.py elapsed {time_end_vis_image - time_beg_vis_image:.6f} seconds')
+    print(pcolor(f'vis_label_in_image.py elapsed {time_end_vis_image - time_beg_vis_image:.6f} seconds', 'yellow'))

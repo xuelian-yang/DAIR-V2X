@@ -1,4 +1,4 @@
-## Visualization tutorial
+### Visualization tutorial
 
 We provide the tools to visualize the 3d label in images and point clouds, and visualize the prediction results.
 
@@ -11,6 +11,12 @@ If you want to visualize the 3d label in images, you can run following commands.
 ```bash
 cd ${dair_v2x_root}
 python tools/visualize/vis_label_in_image.py --path ${data_root} --output-file ./vis_results
+
+python tools/visualize/vis_label_in_image.py --path /mnt/datax/xuelian-yang/DAIR-V2X/data/DAIR-V2X/cooperative-vehicle-infrastructure/infrastructure-side --output-file /mnt/datax/xuelian-yang/DAIR-V2X/data/DAIR-V2X/cooperative-vehicle-infrastructure/vis_results_infrastructure-side
+
+python tools/visualize/vis_label_in_image.py --path /mnt/datax/xuelian-yang/DAIR-V2X/data/DAIR-V2X/cooperative-vehicle-infrastructure/cooperative --output-file /mnt/datax/xuelian-yang/DAIR-V2X/data/DAIR-V2X/cooperative-vehicle-infrastructure/vis_results_cooperative
+
+python tools/visualize/vis_label_in_image.py --path /mnt/datax/xuelian-yang/DAIR-V2X/data/DAIR-V2X/cooperative-vehicle-infrastructure/vehicle-side --output-file /mnt/datax/xuelian-yang/DAIR-V2X/data/DAIR-V2X/cooperative-vehicle-infrastructure/vis_results_vehicle-side
 ```
 
 - **path** refers to the directory of the images that want be visualized. It can be ${DAIR-V2X-V_ROOT}, ${DAIR-V2X-I_ROOT}, ${DAIR-V2X-C-I_ROOT}, or ${DAIR-V2X-C-V_ROOT}.

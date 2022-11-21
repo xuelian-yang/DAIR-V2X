@@ -41,3 +41,9 @@ python eval.py \
   --extended-range $EXTEND_RANGE_START -39.68 -3 $EXTEND_RANGE_END 39.68 1 \
   --overwrite-cache \
   $TIME_COMPENSATION
+
+: '
+  --debug \
+  --save-image \
+  --save-point-cloud \
+'

@@ -6,8 +6,11 @@ from torch.utils.data import Dataset
 from v2x_utils import get_trans
 from dataset.dataset_utils import load_json
 
+from utils.setup_log import trace_logger
+
 
 def get_annos(path, prefix, single_frame, sensortype="camera"):
+    trace_logger.warning(f'get_annos( .. )')
     img_path = path + prefix + single_frame["image_path"]
     trans0_path = ""
     if "calib_lidar_to_camera_path" in single_frame.keys():
@@ -48,6 +51,7 @@ def get_annos(path, prefix, single_frame, sensortype="camera"):
 
 
 def build_path_to_info(prefix, data, sensortype="lidar"):
+    trace_logger.warning(f'build_path_to_info( .. )')
     path2info = {}
     if sensortype == "lidar":
         for elem in data:

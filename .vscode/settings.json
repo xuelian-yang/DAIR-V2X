@@ -2,6 +2,7 @@
     "editor.fontSize": 14,
     "editor.rulers": [80,120],
     "workbench.colorCustomizations": {
-        "editorRuler.foreground": "#3f6277"
-    }
+        "editorRuler.foreground": "#04acfa"
+    },
+    "editor.renderWhitespace": "all"
 }

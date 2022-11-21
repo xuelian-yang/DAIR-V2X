@@ -31,6 +31,8 @@ We implement PointPillars and provide the results and checkpoints on DAIR-V2X-I 
 cd ${dair-v2x_root}/dair-v2x
 mkdir ./data/DAIR-V2X
 ln -s ${DAIR-V2X-I_DATASET_ROOT}/single-infrastructure-side ./data/DAIR-V2X
+
+ln -s /mnt/datax/Datasets/DAIR-V2X-Extracted/single-infrastructure-side ./data/DAIR-V2X
 ```
 
 #### Create Kitti-format data (Option for model training)

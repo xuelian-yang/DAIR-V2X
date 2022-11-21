@@ -75,6 +75,7 @@ def polygon_clip(subjectPolygon, clipPolygon):
 
 def poly_area(x, y):
     """Ref: http://stackoverflow.com/questions/24467972/calculate-area-of-polygon-given-x-y-coordinates"""
+    trace_logger.warning(f'poly_area( .. )')
     return 0.5 * np.abs(np.dot(x, np.roll(y, 1)) - np.dot(y, np.roll(x, 1)))
 
 
@@ -263,6 +264,7 @@ def compute_ap(pred_annos, num_gt):
 
 class Evaluator(object):
     def __init__(self, pred_classes):
+        trace_logger.warning(f'Evaluator::__init__( {pred_classes} )')
         self.pred_classes = pred_classes
         self.all_preds = {"3d": {}, "bev": {}}
         self.gt_num = {}
@@ -279,11 +281,11 @@ class Evaluator(object):
 
     def debug_info(self):
         logging.info(f'pred_classes: {self.pred_classes}')
-        logging.info(f'all_preds: {self.all_preds}')
+        logging.info(f'all_preds:    {self.all_preds}')
 
     def add_frame(self, pred, label):
-        trace_logger.warning(f'add_frame(...)')
-        # exit(0)
+        trace_logger.warning(f'add_frame( pred=inf_id: {pred["inf_id"]}, veh_id: {pred["veh_id"]}, {pred["boxes_3d"].shape} , label={len(label["labels_3d"])} )')
+
         for pred_class in self.pred_classes:
             for iou in iou_threshold_dict[pred_class]:
                 pred_result, num_label, num_tp = compute_type(label, pred, pred_class, iou, "3d")  # test

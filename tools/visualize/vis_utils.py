@@ -6,9 +6,15 @@ import errno
 import numpy as np
 import cv2
 import pickle
+import sys
+import os.path as osp
+
+sys.path.append(osp.join(osp.dirname(osp.abspath(__file__)), '../../'))
+from utils.setup_log import trace_logger
 
 
 def mkdir_p(path):
+    trace_logger.warning(f'mkdir_p( {path} )')
     try:
         os.makedirs(path)
     except OSError as exc:  # Python >2.5
@@ -27,17 +33,20 @@ def id_to_str(id, digits=6):
 
 
 def load_pkl(path):
+    trace_logger.warning(f'load_pkl( .. )')
     with open(path, "rb") as f:
         return pickle.load(f)
 
 
 def read_json(path):
+    trace_logger.warning(f'read_json( .. )')
     with open(path, "r") as f:
         my_json = json.load(f)
         return my_json
 
 
 def get_label(label):
+    trace_logger.warning(f'get_label( .. )')
     h = float(label[0]["h"])
     w = float(label[0]["w"])
     length = float(label[0]["l"])
@@ -49,6 +58,7 @@ def get_label(label):
 
 
 def get_lidar2cam(calib):
+    trace_logger.warning(f'get_lidar2cam( .. )')
     if "Tr_velo_to_cam" in calib.keys():
         velo2cam = np.array(calib["Tr_velo_to_cam"]).reshape(3, 4)
         r_velo2cam = velo2cam[:, :3]
@@ -60,6 +70,7 @@ def get_lidar2cam(calib):
 
 
 def get_cam_calib_intrinsic(calib_path):
+    trace_logger.warning(f'get_cam_calib_intrinsic( .. )')
     my_json = read_json(calib_path)
     cam_K = my_json["cam_K"]
     calib = np.zeros([3, 4])
@@ -79,6 +90,7 @@ def plot_rect3d_on_img(img, num_rects, rect_corners, color=(0, 255, 0), thicknes
         color (tuple[int]): The color to draw bboxes. Default: (0, 255, 0).
         thickness (int, optional): The thickness of bboxes. Default: 1.
     """
+    trace_logger.warning(f'plot_rect3d_on_img( .. )')
     line_indices = ((0, 1), (0, 3), (0, 4), (1, 2), (1, 5), (3, 2), (3, 7), (4, 5), (4, 7), (2, 6), (5, 6), (6, 7))
     for i in range(num_rects):
         corners = rect_corners[i].astype(np.int)
@@ -103,6 +115,7 @@ def plot_rect3d_on_img(img, num_rects, rect_corners, color=(0, 255, 0), thicknes
 
 
 def get_rgb(img_path):
+    trace_logger.warning(f'get_rgb( .. )')
     return cv2.imread(img_path)
 
 
@@ -113,6 +126,7 @@ def points_cam2img(points_3d, calib_intrinsic, with_depth=False):
     calib_intrinsic: 3 x 4
     return: N x 8 x 2
     """
+    trace_logger.warning(f'points_cam2img( .. )')
     points_num = list(points_3d.shape)[:-1]
     points_shape = np.concatenate([points_num, [1]], axis=0)
     points_2d_shape = np.concatenate([points_num, [3]], axis=0)
@@ -140,6 +154,7 @@ def points_cam2img(points_3d, calib_intrinsic, with_depth=False):
 
 
 def compute_corners_3d(dim, rotation_y):
+    trace_logger.warning(f'compute_corners_3d( .. )')
     c, s = np.cos(rotation_y), np.sin(rotation_y)
     R = np.array([[c, -s, 0], [s, c, 0], [0, 0, 1]], dtype=np.float32)
     # R = np.array([[c, 0, s], [0, 1, 0], [-s, 0, c]], dtype=np.float32)
@@ -158,6 +173,7 @@ def compute_box_3d(dim, location, rotation_y):
     # location: 3
     # rotation_y: 1
     # return: 8 x 3
+    trace_logger.warning(f'compute_box_3d( .. )')
     corners_3d = compute_corners_3d(dim, rotation_y)
     corners_3d = corners_3d + np.array(location, dtype=np.float32).reshape(1, 3)
 
@@ -193,6 +209,7 @@ def get_cam_8_points(labels, calib_lidar2cam_path):
                     down y
 
     """
+    trace_logger.warning(f'get_cam_8_points( .. )')
     calib_lidar2cam = read_json(calib_lidar2cam_path)
     r_velo2cam, t_velo2cam = get_lidar2cam(calib_lidar2cam)
     camera_8_points_list = []
@@ -222,6 +239,7 @@ def vis_label_in_img(camera_8_points_list, img_path, path_camera_intrinsic, save
     # # path_list_camera_intrinsic.sort()
     #
     # for frame in dirs_camera_intrinsic:
+    trace_logger.warning(f'vis_label_in_img( .. )')
     index = img_path.split("/")[-1].split(".")[0]
     calib_intrinsic = get_cam_calib_intrinsic(path_camera_intrinsic)
     img = get_rgb(img_path)

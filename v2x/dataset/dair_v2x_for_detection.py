@@ -125,7 +125,7 @@ class DAIRV2XV(DAIRV2XDataset):
 
 class VICDataset(DAIRV2XDataset):
     def __init__(self, path, args, split="train", sensortype="lidar", extended_range=None):
-        trace_logger.warning(f'VICDataset::__init__(..)')
+        trace_logger.warning(f'VICDataset::__init__( path={path}, \n\tsplit={split}, sensortype={sensortype}, \n\textended_range={extended_range} )')
         super().__init__(path + "/cooperative", args, split, extended_range)
         self.path = path
         self.inf_path2info = build_path_to_info(
@@ -222,7 +222,7 @@ class VICDataset(DAIRV2XDataset):
 
 class VICSyncDataset(VICDataset):
     def __init__(self, path, args, split="train", sensortype="lidar", extended_range=None):
-        trace_logger.warning(f'VICSyncDataset::__init__(..)')
+        trace_logger.warning(f'VICSyncDataset::__init__( path={path}, \n\tsplit={split}, sensortype={sensortype}, \n\textended_range={extended_range} )')
         super().__init__(path, args, split, sensortype, extended_range)
         logger.info("VIC-Sync {} dataset, overall {} frames".format(split, len(self.data)))
 

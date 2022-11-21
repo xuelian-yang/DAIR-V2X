@@ -94,6 +94,7 @@ class LateFusionInf(nn.Module):
         if self.args.sensortype == "lidar":
             tmp = frame.point_cloud(data_format="file")
             result, _ = inference_detector(self.model, tmp)
+            # trace_logger.warning(f'result of {frame["pointcloud_path"]}: {result}')
         elif self.args.sensortype == "camera":
             tmp = osp.join(self.args.input, "infrastructure-side", frame["image_path"])
             annos = osp.join(self.args.input, "infrastructure-side", "annos", id + ".json")
@@ -133,7 +134,10 @@ class LateFusionInf(nn.Module):
             result[0]["scores_3d"] = np.zeros((1))
 
         if self.args.sensortype == "lidar" and self.args.save_point_cloud:
-            save_data = trans(frame.point_cloud(format="array"))
+            if trans is not None:
+                save_data = trans(frame.point_cloud(data_format="array")[0][:, :3])
+            else:
+                save_data = np.array(frame.point_cloud(data_format="array")[0][:, :3])
         elif self.args.sensortype == "camera" and self.args.save_image:
             save_data = frame.image(data_format="array")
         else:
@@ -154,6 +158,7 @@ class LateFusionInf(nn.Module):
 
     def forward(self, data, trans, pred_filter, prev_inf_frame_func=None):
         trace_logger.warning(f'LateFusionInf::forward(..)')
+        '''
         try:
             pred_dict, id = self.pred(data, trans, pred_filter)
         except Exception:
@@ -164,6 +169,16 @@ class LateFusionInf(nn.Module):
                 device=self.args.device,
             )
             pred_dict, id = self.pred(data, trans, pred_filter)
+        '''
+        if self.model is None:
+            logger.info("building inf model")
+            self.model = init_model(
+                self.args.inf_config_path,
+                self.args.inf_model_path,
+                device=self.args.device,
+            )
+        pred_dict, id = self.pred(data, trans, pred_filter)
+
         self.pipe.send("boxes", pred_dict["boxes_3d"])
         self.pipe.send("score", pred_dict["scores_3d"])
         self.pipe.send("label", pred_dict["labels_3d"])
@@ -207,7 +222,7 @@ class LateFusionVeh(nn.Module):
         self.args = args
 
     def pred(self, frame, trans, pred_filter):
-        trace_logger.warning(f'LateFusionVeh::pred(..)')
+        trace_logger.warning(f'LateFusionVeh::pred( .., trans={trans}, ..)')
         if self.args.sensortype == "lidar":
             id = frame.id["lidar"]
             logger.debug("vehicle pointcloud_id: {}".format(id))
@@ -269,7 +284,13 @@ class LateFusionVeh(nn.Module):
             result[0]["scores_3d"] = np.zeros((1))
 
         if self.args.sensortype == "lidar" and self.args.save_point_cloud:
-            save_data = trans(frame.point_cloud(format="array"))
+            data = frame.point_cloud(data_format="array")
+            # print(f'  data: {type(data)}')
+            # veh cloud: xyz vs xyzr in inf cloud ?
+            if trans is not None:
+                save_data = trans(frame.point_cloud(data_format="array")[0])
+            else:
+                save_data = np.array(frame.point_cloud(data_format="array")[0])
         elif self.args.sensortype == "camera" and self.args.save_image:
             save_data = frame.image(data_format="array")
         else:
@@ -290,6 +311,7 @@ class LateFusionVeh(nn.Module):
 
     def forward(self, data, trans, pred_filter):
         trace_logger.warning(f'LateFusionVeh::forward(..)')
+        '''
         try:
             pred_dict, id = self.pred(data, trans, pred_filter)
         except Exception:
@@ -300,6 +322,15 @@ class LateFusionVeh(nn.Module):
                 device=self.args.device,
             )
             pred_dict, id = self.pred(data, trans, pred_filter)
+        '''
+        if self.model is None:
+            logger.info("building veh model")
+            self.model = init_model(
+                self.args.veh_config_path,
+                self.args.veh_model_path,
+                device=self.args.device,
+            )
+        pred_dict, id = self.pred(data, trans, pred_filter)
         return pred_dict, id
 
 

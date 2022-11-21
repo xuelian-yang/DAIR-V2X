@@ -55,7 +55,7 @@ def init_model(config, checkpoint=None, device="cuda:0"):
     Returns:
         nn.Module: The constructed detector.
     """
-    trace_logger.warning(f'init_model(..)')
+    trace_logger.warning(f'init_model( {config}, {checkpoint}, {device} )')
     if isinstance(config, str):
         config = mmcv.Config.fromfile(config)
     elif not isinstance(config, mmcv.Config):
@@ -124,6 +124,7 @@ def inference_detector(model, pcd):
     # forward the model
     with torch.no_grad():
         result = model(return_loss=False, rescale=True, **data)
+    show_result_meshlab(data, result, '/tmp/result', score_thr=0.0, show=True, snapshot=True)
     return result, data
 
 
@@ -289,6 +290,7 @@ def inference_segmentor(model, pcd):
     Returns:
         tuple: Predicted results and data from pipeline.
     """
+    trace_logger.warning(f'inference_segmentor( {type(model)}, {pcd} )')
     cfg = model.cfg
     device = next(model.parameters()).device  # model device
     # build the data pipeline
@@ -321,6 +323,7 @@ def inference_segmentor(model, pcd):
 
 def show_det_result_meshlab(data, result, out_dir, score_thr=0.0, show=False, snapshot=False):
     """Show 3D detection result by meshlab."""
+    trace_logger.warning(f'show_det_result( .. )')
     points = data["points"][0][0].cpu().numpy()
     pts_filename = data["img_metas"][0][0]["pts_filename"]
     file_name = osp.split(pts_filename)[-1].split(".")[0]
@@ -353,6 +356,7 @@ def show_det_result_meshlab(data, result, out_dir, score_thr=0.0, show=False, sn
 
 def show_seg_result_meshlab(data, result, out_dir, palette, show=False, snapshot=False):
     """Show 3D segmentation result by meshlab."""
+    trace_logger.warning(f'show_seg_result_meshlab( .. )')
     points = data["points"][0][0].cpu().numpy()
     pts_filename = data["img_metas"][0][0]["pts_filename"]
     file_name = osp.split(pts_filename)[-1].split(".")[0]
@@ -372,6 +376,7 @@ def show_seg_result_meshlab(data, result, out_dir, palette, show=False, snapshot
 
 def show_proj_det_result_meshlab(data, result, out_dir, score_thr=0.0, show=False, snapshot=False):
     """Show result of projecting 3D bbox to 2D image by meshlab."""
+    trace_logger.warning(f'show_proj_det_result_meshlab( .. )')
     assert "img" in data.keys(), "image data is not provided for visualization"
 
     img_filename = data["img_metas"][0][0]["filename"]
@@ -455,6 +460,7 @@ def show_result_meshlab(data, result, out_dir, score_thr=0.0, show=False, snapsh
                 segmentation map. If None is given, random palette will be
                 generated. Defaults to None.
     """
+    trace_logger.warning(f'show_result_meshlab( .. )')
     assert task in ["det", "multi_modality-det", "seg", "mono-det"], f"unsupported visualization task {task}"
     assert out_dir is not None, "Expect out_dir, got none."
 

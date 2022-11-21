@@ -11,6 +11,7 @@ mmdetection3d==0.17.1, pypcd
 Firstly follow the instructions [here](https://github.com/open-mmlab/mmdetection3d/blob/master/docs/en/getting_started.md) to install mmdetection3d. Make sure the version of mmdetection3d is exactly 0.17.1.
 
 Note that pypcd pip installing is not compatible with Python3. Therefore [a modified version](https://github.com/dimatura/pypcd) should be manually installed as followings.
+
 ```
 git clone https://github.com/klintan/pypcd.git
 cd pypcd
@@ -106,6 +107,8 @@ Run the following commands for evaluation:
 cd ${dair_v2x_root}
 cd v2x
 bash scripts/eval_lidar_late_fusion_pointpillars.sh 0 late_fusion 2 0 100
+
+bash scripts/eval_lidar_late_fusion_pointpillars.sh 0 late_fusion 0 0 100
 ```
 
 Or:

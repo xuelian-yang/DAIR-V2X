@@ -20,6 +20,7 @@ from dataset.dataset_utils import save_pkl
 from models import SUPPROTED_MODELS
 from models.model_utils import Channel
 
+import datetime
 import time
 sys.path.append(osp.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from utils.setup_log import setup_log, git_info, pcolor
@@ -30,7 +31,7 @@ def eval_vic(args, dataset, model, evaluator):
     idx = -1
     for VICFrame, label, filt in tqdm(dataset):
         idx += 1
-        if idx > 10:
+        if idx > 1:
             break
         # if idx % 10 != 0:
         #     continue
@@ -81,7 +82,8 @@ def print_configs(args):
 
 
 if __name__ == "__main__":
-    setup_log('v2x_eval.log')
+    # setup_log(f'v2x_eval_{datetime.datetime.now()}.log')
+    setup_log(f'v2x_eval.log')
     time_beg_eval = time.time()
 
     parser = argparse.ArgumentParser(conflict_handler="resolve")
@@ -124,7 +126,7 @@ if __name__ == "__main__":
     logger.info("loading evaluator")
     evaluator = Evaluator(args.pred_classes)
 
-    logger.info(f"loading model of {args.eval_single}")
+    logger.info(f"loading model of [eval_single: {args.eval_single}]")
     if args.eval_single:
         # SingleSide  / LateFusionVeh
         logging.warning(f'eval_single')

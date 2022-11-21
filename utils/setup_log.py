@@ -30,11 +30,29 @@ class DuplicateFilter:
 class DuplicateFilter(object):
     def __init__(self):
         self.msgs = set()
+        self.msgs_times = {}
 
     def filter(self, record):
         rv = record.msg not in self.msgs
-        self.msgs.add(record.msg)
+        if rv:
+            self.msgs.add(record.msg)
+            self.msgs_times[record.msg] = 1
+        else:
+            if self.msgs_times[record.msg] < 1:
+                self.msgs_times[record.msg] += 1
+                rv = True
+            else:
+                pass
         return rv
+
+    def filter_once(self, record):
+        rv = record.msg not in self.msgs
+        if rv:
+            self.msgs.add(record.msg)
+        return rv
+
+    def filter_all(self, record):
+        return True
 
 
 def pcolor(string, color, on_color=None, attrs=None):

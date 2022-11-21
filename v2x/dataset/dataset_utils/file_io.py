@@ -6,6 +6,8 @@ from pypcd import pypcd
 import mmcv
 import logging
 
+from utils.setup_log import trace_logger, pcolor
+
 
 def load_json(path, debug=False):
     with open(path, mode="r") as f:
@@ -27,6 +29,7 @@ def load_pkl(path):
 
 
 def save_pkl(item, path):
+    logging.warning(f'save_pkl( .., {path} )')
     with open(path, "wb") as f:
         pickle.dump(item, f)
 

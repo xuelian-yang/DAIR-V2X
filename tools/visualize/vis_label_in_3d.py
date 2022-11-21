@@ -8,6 +8,13 @@ from pypcd import pypcd
 import json
 from vis_utils import id_to_str, load_pkl
 
+import logging
+import time
+import sys
+
+sys.path.append(osp.join(osp.dirname(osp.abspath(__file__)), '../../'))
+from utils.setup_log import setup_log, pcolor, trace_logger
+
 
 def draw_boxes3d(
     boxes3d, fig, arrows=None, color=(1, 0, 0), line_width=2, draw_text=True, text_scale=(1, 1, 1), color_list=None
@@ -21,6 +28,7 @@ def draw_boxes3d(
     text_scale: three number tuple
     color_list: RGB tuple
     """
+    trace_logger.warning(f'draw_boxes3d( .. )')
     num = len(boxes3d)
     for n in range(num):
         if arrows is not None:
@@ -75,6 +83,7 @@ def draw_boxes3d(
 
 
 def read_bin(path):
+    trace_logger.warning(f'read_bin( .. )')
     pointcloud = np.fromfile(path, dtype=np.float32, count=-1).reshape([-1, 4])
     print(pointcloud.shape)
     x = pointcloud[:, 0]
@@ -84,6 +93,7 @@ def read_bin(path):
 
 
 def read_pcd(pcd_path):
+    trace_logger.warning(f'read_pcd( .. )')
     pcd = pypcd.PointCloud.from_path(pcd_path)
 
     x = np.transpose(pcd.pc_data["x"])
@@ -93,6 +103,7 @@ def read_pcd(pcd_path):
 
 
 def get_lidar_3d_8points(obj_size, yaw_lidar, center_lidar):
+    trace_logger.warning(f'get_lidar_3d_8points( .. )')
     center_lidar = [center_lidar[0], center_lidar[1], center_lidar[2]]
 
     lidar_r = np.matrix(
@@ -113,6 +124,7 @@ def get_lidar_3d_8points(obj_size, yaw_lidar, center_lidar):
 
 
 def read_label_bboxes(label_path):
+    logging.warning(f'read_label_bboxes( {label_path} )')
     with open(label_path, "r") as load_f:
         labels = json.load(load_f)
 
@@ -137,6 +149,7 @@ def read_label_bboxes(label_path):
 
 
 def plot_box_pcd(x, y, z, boxes):
+    trace_logger.warning(f'plot_box_pcd( .. )')
     vals = "height"
     if vals == "height":
         col = z
@@ -158,6 +171,7 @@ def plot_box_pcd(x, y, z, boxes):
 
 
 def plot_pred_fusion(args):
+    logging.warning(f'plot_pred_fusion( {args} )')
     fig = mlab.figure(bgcolor=(1, 1, 1), size=(640, 500))
     data_all = load_pkl(osp.join(args.path, "result", id_to_str(args.id) + ".pkl"))
     print(data_all.keys())
@@ -177,6 +191,7 @@ def plot_pred_fusion(args):
 
 
 def plot_pred_single(args):
+    logging.warning(f'plot_pred_single( {args} )')
     fig = mlab.figure(bgcolor=(1, 1, 1), size=(1280, 1000))
     path = args.path
     file = id_to_str(args.id) + ".pkl"
@@ -196,6 +211,7 @@ def plot_pred_single(args):
 
 
 def plot_label_pcd(args):
+    logging.warning(f'plot_label_pcd( {args} )')
     pcd_path = args.pcd_path
     x, y, z = read_pcd(pcd_path)
 
@@ -214,6 +230,11 @@ def add_arguments(parser):
 
 
 if __name__ == "__main__":
+    setup_log('tools_visualize_vis_label_in_3d.log')
+
+    time_beg_vis_3d = time.time()
+    print(pcolor(f'sys.version: {sys.version}', 'yellow'))
+
     parser = argparse.ArgumentParser()
     add_arguments(parser)
     args = parser.parse_args()
@@ -226,3 +247,7 @@ if __name__ == "__main__":
 
     if args.task == "pcd_label":
         plot_label_pcd(args)
+
+    time_end_vis_3d = time.time()
+    logging.warning(f'vis_label_in_3d.py elapsed {time_end_vis_3d - time_beg_vis_3d} seconds')
+    print(pcolor(f'vis_label_in_3d.py elapsed {time_end_vis_3d - time_beg_vis_3d} seconds', 'yellow'))

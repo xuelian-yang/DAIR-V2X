@@ -3,6 +3,10 @@ import numpy as np
 import math
 import os
 import json
+import logging
+
+from utils.setup_log import trace_logger
+
 
 
 def get_trans(info):
@@ -89,6 +93,9 @@ class Coord_transformation(object):
     """
 
     def __init__(self, from_coord, to_coord, path_root, infra_name, veh_name):
+        # trace_logger.warning(f'Coord_transformation::__init__( {from_coord}, {to_coord}, {path_root}, {infra_name}, {veh_name} )')
+        trace_logger.warning(f'Coord_transformation::__init__( {from_coord}, {to_coord}, {path_root}, ... )')
+        # print(f'Coord_transformation::__init__( {from_coord}, {to_coord}, {path_root}, {infra_name}, {veh_name} )')
         # self.transformer = Transformation()
         self.from_coord = from_coord
         self.to_coord = to_coord
@@ -101,6 +108,8 @@ class Coord_transformation(object):
         self.delta_y = None
 
     def __call__(self, point):
+        trace_logger.warning(f'Coord_transformation::__call__( .. )')
+        # print(f'Coord_transformation::__call__( {type(point)} {len(point)}')
 
         path_all = {
             "path_root": self.path_root,
@@ -113,6 +122,7 @@ class Coord_transformation(object):
         return self.point_transformation(point, rotation, translation)
 
     def forward(self, from_coord, to_coord, path_all):
+        trace_logger.warning(f'Coord_transformation::forward( .. )')
         coord_list = ["Infrastructure_lidar", "World", "Vehicle_lidar"]
         if (from_coord in coord_list) and (to_coord in coord_list):
             if from_coord == "Infrastructure_lidar" and to_coord == "World":
@@ -235,10 +245,15 @@ class Coord_transformation(object):
         return new_rotationA2C, new_translationA2C
 
     def point_transformation(self, input_box, rotation, translation):
+        # todo: matrix operation
+        trace_logger.warning(f'point_transformation( .. )')
+        # print(f'point_transformation( {type(input_box)} - {np.array(input_box).shape} - {input_box} )')
         translation = np.array(translation).reshape(3, 1)
         rotation = np.array(rotation).reshape(3, 3)
         output = []
         for box in input_box:
+            if box is None:
+                continue
             if len(box) == 3:
                 output.append(np.dot(rotation, box.reshape(3, 1)).reshape(3) + np.array(translation).reshape(3))
                 continue
@@ -246,7 +261,9 @@ class Coord_transformation(object):
             for point in box:
                 output_point.append(np.dot(rotation, point.reshape(3, 1)).reshape(3) + np.array(translation).reshape(3))
             output.append(output_point)
-
+        if len(output) <= 0:
+            logging.warning(f'  empty output')
+            # print(f'  empty output')
         return np.array(output)
 
     def single_point_transformation(self, input_point):
