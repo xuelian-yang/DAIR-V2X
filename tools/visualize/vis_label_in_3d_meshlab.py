@@ -50,6 +50,35 @@ def plot_pred_single(args):
     show_result(pc[:, :3], None, np.array(data_all['raw_boxes_3d']), out_dir='/tmp/dair_mesh', filename='name', show=True, snapshot=True)
 
 
+def plot_label_pcd(args):
+    logging.warning(f'plot_label_pcd( {args} )')
+    # pc = np.fromfile(args.pcd_path, dtype=np.float32).reshape([-1, 3])
+    with open(args.label_path, 'r') as load_f:
+        labels = json.load(load_f)
+    xyz_lwh_r = []
+    for label in labels:
+        dim = [
+            float(label["3d_location"]["x"]),
+            float(label["3d_location"]["y"]),
+            float(label["3d_location"]["z"]),
+            float(label["3d_dimensions"]["l"]),
+            float(label["3d_dimensions"]["w"]),
+            float(label["3d_dimensions"]["h"]),
+            float(label["rotation"])
+        ]
+        xyz_lwh_r.append(dim)
+    pcd = pypcd.PointCloud.from_path(args.pcd_path)
+    pcd_np_points = np.zeros((pcd.points, 4), dtype=np.float32)
+    pcd_np_points[:, 0] = np.transpose(pcd.pc_data["x"])
+    pcd_np_points[:, 1] = np.transpose(pcd.pc_data["y"])
+    pcd_np_points[:, 2] = np.transpose(pcd.pc_data["z"])
+    pcd_np_points[:, 3] = np.transpose(pcd.pc_data["intensity"]) / 256.0
+    del_index = np.where(np.isnan(pcd_np_points))[0]
+    pcd_np_points = np.delete(pcd_np_points, del_index, axis=0)
+    show_result(pcd_np_points[:, :3], None, np.array(xyz_lwh_r), out_dir='/tmp/dair_mesh', filename='name', show=True, snapshot=True)
+
+
+
 def add_arguments(parser):
     parser.add_argument("--task", type=str, default="coop", choices=["fusion", "single", "pcd_label"])
     parser.add_argument("--path", type=str, default="./coop-mono_v50100")
@@ -60,14 +89,14 @@ def add_arguments(parser):
 
 if __name__ == '__main__':
     setup_log(f'tools_visualize_vis_label_in_3d_meshlab.log')
+    time_beg_vis_3d_meshlab = time.time()
 
     parser = argparse.ArgumentParser()
     add_arguments(parser)
     args = parser.parse_args()
 
-    if args.task == "fusion":
+    if args.task == 'fusion':
         '''
-
         data_root=/mnt/datax/xuelian-yang/DAIR-V2X/cache/vic-late-lidar
         id=3144
         pcd_path=/mnt/datax/xuelian-yang/DAIR-V2X/cache/tmps/tmp_v_003144.bin
@@ -79,19 +108,32 @@ if __name__ == '__main__':
     elif args.task == 'single':
         '''
         # veh
-
         pcd_path=/mnt/datax/xuelian-yang/DAIR-V2X/cache/tmps/tmp_v_003144.bin
         id=3144
         path=/mnt/datax/xuelian-yang/DAIR-V2X/cache/vic-late-lidar/veh/lidar
         python tools/visualize/vis_label_in_3d_meshlab.py --task single --path ${path} --id ${id} --pcd-path ${pcd_path}
 
         # inf
-
         pcd_path=/mnt/datax/xuelian-yang/DAIR-V2X/cache/tmps/tmp_i_009362.bin
         id=9362
         path=/mnt/datax/xuelian-yang/DAIR-V2X/cache/vic-late-lidar/inf/lidar
         python tools/visualize/vis_label_in_3d_meshlab.py --task single --path ${path} --id ${id} --pcd-path ${pcd_path}
         '''
-
         plot_pred_single(args)
-    pass
+
+    elif args.task == 'pcd_label':
+        '''
+        data_root=/mnt/datax/Datasets/DAIR-V2X-Extracted/single-infrastructure-side-example
+        pcd_path=${data_root}/velodyne/000000.pcd
+        label_json_path=${data_root}/label/virtuallidar/000000.json
+
+        python tools/visualize/vis_label_in_3d_meshlab.py --task pcd_label --pcd-path ${pcd_path} --label-path ${label_json_path}
+
+        '''
+        plot_label_pcd(args)
+
+    time_end_vis_3d_meshlab = time.time()
+    logging.warning(f'vis_label_in_3d.py elapsed {time_end_vis_3d_meshlab - time_beg_vis_3d_meshlab} seconds')
+    print(pcolor(f'vis_label_in_3d.py elapsed {time_end_vis_3d_meshlab - time_beg_vis_3d_meshlab} seconds', 'yellow'))
+
+
