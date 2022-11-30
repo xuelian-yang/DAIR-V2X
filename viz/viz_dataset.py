@@ -9,14 +9,19 @@ References
         https://github.com/isl-org/Open3D/issues/2869#issuecomment-761942166
     Open3D example - video.py
         https://github.com/isl-org/Open3D/blob/master/examples/python/visualization/video.py
+
+pip install pyscreenshot
 """
+
 
 import os
 import os.path as osp
+import pyscreenshot
 import sys
 
-import time
+from termcolor import colored
 import threading
+import time
 
 try:
     import open3d as o3d
@@ -45,6 +50,11 @@ cmake -DBUILD_CUDA_MODULE=ON \
 # Install the python wheel with pip
 make -j install-pip-package
 """
+
+
+def pcolor(string, color, on_color=None, attrs=None):
+    return colored(string, color, on_color, attrs)
+
 
 class PathConfig:
     def __init__(self, path_cfg):
@@ -95,8 +105,19 @@ def get_path():
     return PathConfig(path_cfg)
 
 
-class VideoWindow:
+class AppWindow:
+    MENU_OPEN = 1
+    MENU_EXPORT = 2
+    MENU_QUIT = 3
+    MENU_SHOW_SETTINGS = 11
+    MENU_ABOUT = 21
+    MENU_VIEWPOINT = 31
+    MENU_SCREENSHOT = 32
+
     def __init__(self, data):
+        # config
+        self.config_screenshot = False
+
         self.rgb_images = []
         self.pcd = []
         for img, pcd in data.read_frames():
@@ -117,7 +138,7 @@ class VideoWindow:
         self.lit = rendering.MaterialRecord()
         self.lit.shader = "defaultLit"
         self.widget3d.scene.show_axes(True)
-        self.widget3d.scene.camera.look_at([70,0,0], [0,0,150], [1,0,1])
+        self.widget3d.scene.camera.look_at([70,0,0], [0,0,150], [1,0,1]) # look_at(center, eye, up)
 
         em = self.window.theme.font_size
         margin = 0.5 * em
@@ -126,6 +147,40 @@ class VideoWindow:
         self.rgb_widget = gui.ImageWidget(self.rgb_images[0])
         self.panel.add_child(self.rgb_widget)
         self.window.add_child(self.panel)
+
+        # ---- Menu ----
+        if gui.Application.instance.menubar is None:
+            # file
+            file_menu = gui.Menu()
+            file_menu.add_item("Open...", AppWindow.MENU_OPEN)
+            file_menu.add_item("Export Current Image...", AppWindow.MENU_EXPORT)
+            file_menu.add_separator()
+            file_menu.add_item("Quit", AppWindow.MENU_QUIT)
+            # settings
+            settings_menu = gui.Menu()
+            settings_menu.add_item("Lighting & Materials",
+                                   AppWindow.MENU_SHOW_SETTINGS)
+            settings_menu.set_checked(AppWindow.MENU_SHOW_SETTINGS, True)
+            # help
+            help_menu = gui.Menu()
+            help_menu.add_item("About", AppWindow.MENU_ABOUT)
+            # debug
+            debug_menu = gui.Menu()
+            debug_menu.add_item("Show viewpoint", AppWindow.MENU_VIEWPOINT)
+            debug_menu.add_item("Take Screenshot", AppWindow.MENU_SCREENSHOT)
+
+            # menubar
+            menu = gui.Menu()
+            menu.add_menu("File", file_menu)
+            menu.add_menu("Settings", settings_menu)
+            menu.add_menu("Help", help_menu)
+            menu.add_menu("Debug", debug_menu)
+            gui.Application.instance.menubar = menu
+
+        # connect the menu items to the window
+        self.window.set_on_menu_item_activated(AppWindow.MENU_QUIT, self._on_menu_quit)
+        self.window.set_on_menu_item_activated(AppWindow.MENU_VIEWPOINT, self._on_menu_viewpoint)
+        self.window.set_on_menu_item_activated(AppWindow.MENU_SCREENSHOT, self._on_menu_screenshot)
 
         self.is_done = False
         threading.Thread(target=self._update_thread).start()
@@ -144,6 +199,28 @@ class VideoWindow:
         self.is_done = True
         return True
 
+    def _on_menu_quit(self):
+        self.is_done = True
+        gui.Application.instance.quit()
+
+    def _on_menu_viewpoint(self):
+        # todo: manually find best viewpoint
+        model_mat = self.widget3d.scene.camera.get_model_matrix()
+        proj_mat = self.widget3d.scene.camera.get_projection_matrix()
+        view_mat = self.widget3d.scene.camera.get_view_matrix()
+        print(pcolor(f'=== model_mat ===', 'blue'))
+        print(f'{model_mat}')
+        print(pcolor(f'=== proj_mat ===', 'blue'))
+        print(f'{proj_mat}')
+        print(pcolor(f'=== view_mat ===', 'blue'))
+        print(f'{view_mat}')
+
+    def _on_menu_screenshot(self):
+        self.config_screenshot = not self.config_screenshot
+        gui.Application.instance.menubar.set_checked(AppWindow.MENU_SCREENSHOT, self.config_screenshot)
+        win_sz = self.window.content_rect
+        print(pcolor(f'content_rect: {win_sz.x} {win_sz.y} {win_sz.width} {win_sz.height}', 'yellow'))
+
     def _update_thread(self):
         idx = 0
         while not self.is_done:
@@ -156,6 +233,13 @@ class VideoWindow:
             if idx >= len(self.rgb_images):
                 idx = 0
 
+            if self.config_screenshot:
+                win_sz = self.window.content_rect
+                screen = pyscreenshot.grab(bbox=(win_sz.x, 0, win_sz.width, win_sz.height), childprocess=False)
+                save_name = osp.join('/mnt/datax/temp', f'frame-{idx:03d}.png')
+                print(pcolor(f'  write {save_name}', 'blue'))
+                screen.save(save_name)
+
             def update():
                 self.rgb_widget.update_image(rgb_frame)
                 self.widget3d.scene.clear_geometry()
@@ -164,13 +248,18 @@ class VideoWindow:
             if not self.is_done:
                 gui.Application.instance.post_to_main_thread(self.window, update)
 
-if __name__ == "__main__":
-    print(f'sys.version:        {sys.version}')
-    print(f'open3d.__version__: {o3d.__version__}')
-
+def main():
     app = o3d.visualization.gui.Application.instance
     app.initialize()
 
     path = get_path()
-    win = VideoWindow(path)
+    app_win = AppWindow(path)
+
     app.run()
+
+
+if __name__ == "__main__":
+    print(pcolor(f'sys.version:        {sys.version}', 'yellow'))
+    print(pcolor(f'open3d.__version__: {o3d.__version__}\n', 'yellow'))
+
+    main()
