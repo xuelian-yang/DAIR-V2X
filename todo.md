@@ -34,8 +34,7 @@ git clone --recursive git@github.com:xuelian-yang/DAIR-V2X.git
 cd DAIR-V2X
 git checkout demo
 
-cd viz
-python viz_dataset.py
+python viz/viz_dataset.py
 ```
 
 # Env
@@ -125,5 +124,6 @@ pip install -U pip -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirr
 
 - [x] draw 2d image label
 - [x] draw 3d point cloud label
+- [ ] visualization with intensity
 
 <!-- End of File -->

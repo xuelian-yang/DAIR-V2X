@@ -402,9 +402,31 @@ def main():
 
     app.run()
 
+def analysis_pcd():
+    """
+    git clone --recursive git@github.com:klintan/pypcd.git
+    cd pypcd
+    python setup.py install
+    pip install python-lzf -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com
+    """
+
+    from pypcd import pypcd
+    if isLinux:
+        str_root = '/mnt/datax/Datasets/DAIR-V2X-Extracted/cooperative-vehicle-infrastructure-example'
+    else:
+        str_root = 'D:/0-DAIR-V2X-Dataset/DAIR-V2X-C-Example/cooperative-vehicle-infrastructure-example'
+
+    inf_pcd_path = osp.join(str_root, 'infrastructure-side/velodyne/000009.pcd')
+    veh_pcd_path = osp.join(str_root, 'vehicle-side/velodyne/015344.pcd')
+    inf_pcd = pypcd.PointCloud.from_path(inf_pcd_path)
+    veh_pcd = pypcd.PointCloud.from_path(veh_pcd_path)
+    print(pcolor(f'inf_pcd: {type(inf_pcd)} {type(inf_pcd.pc_data)} {inf_pcd.pc_data.shape} {inf_pcd.fields}', 'cyan'))
+    print(pcolor(f'veh_pcd: {type(veh_pcd)} {type(veh_pcd.pc_data)} {veh_pcd.pc_data.shape} {veh_pcd.fields}', 'blue'))
+
 
 if __name__ == "__main__":
     print(pcolor(f'sys.version:        {sys.version}', 'yellow'))
     print(pcolor(f'open3d.__version__: {o3d.__version__}\n', 'yellow'))
 
-    main()
+    # main()
+    analysis_pcd()

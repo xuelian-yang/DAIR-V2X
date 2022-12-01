@@ -1,5 +1,5 @@
 {
-    "editor.fontSize": 14,
+    "editor.fontSize": 12,
     "editor.rulers": [80,120],
     "workbench.colorCustomizations": {
         "editorRuler.foreground": "#04acfa"
