@@ -13,9 +13,14 @@ References
 pip install pyscreenshot
 """
 
-
+import copy
+import cv2
+import json
+import logging
+import numpy as np
 import os
 import os.path as osp
+import pprint
 import pyscreenshot
 import sys
 
@@ -51,6 +56,43 @@ cmake -DBUILD_CUDA_MODULE=ON \
 make -j install-pip-package
 """
 
+g_time_beg = time.time()
+
+name2id = {
+    "car": 2,
+    "van": 2,
+    "truck": 2,
+    "bus": 2,
+    "cyclist": 1,
+    "tricyclist": 3,
+    "motorcyclist": 3,
+    "barrow": 3,
+    "barrowlist": 3,
+    "pedestrian": 0,
+    "trafficcone": 3,
+    "pedestrianignore": 3,
+    "carignore": 3,
+    "otherignore": 3,
+    "unknowns_unmovable": 3,
+    "unknowns_movable": 3,
+    "unknown_unmovable": 3,
+    "unknown_movable": 3,
+}
+
+superclass = {
+    -1: "ignore",
+    0: "pedestrian",
+    1: "cyclist",
+    2: "car",
+    3: "ignore",
+}
+
+color_superclass = {
+    0: (255, 0, 0),
+    1: (0, 255, 0),
+    2: (0, 0, 255),
+    3: (0, 255, 255),
+}
 
 def pcolor(string, color, on_color=None, attrs=None):
     return colored(string, color, on_color, attrs)
@@ -76,9 +118,22 @@ class PathConfig:
 
     def read_frame(self, k):
         assert 0 <= k < self.num
-        image = o3d.io.read_image(self.image_paths[k])
+
+        def load_json(path, debug=False):
+            with open(path, mode="r") as f:
+                data = json.load(f)
+            if debug:
+                logging.info(f'load_json({path})')
+            return data
+
+        image = o3d.t.io.read_image(self.image_paths[k])
         point = o3d.io.read_point_cloud(self.point_paths[k])
-        return image, point
+        label2d = load_json(self.label2d_paths[k])
+        label3d = load_json(self.label3d_paths[k])
+        intr = load_json(self.intr_paths[k])
+        extr_v2c = load_json(self.extr_v2c_paths[k])
+        extr_v2w = load_json(self.extr_v2w_paths[k])
+        return image, point, label2d, label3d, intr, extr_v2c, extr_v2w
 
     def read_frames(self):
         data = []
@@ -105,6 +160,18 @@ def get_path():
     return PathConfig(path_cfg)
 
 
+def draw_2d_image_label(image, label2d):
+    cv_img = copy.deepcopy(image.as_tensor().numpy())
+    for item in label2d:
+        box = item['2d_box']
+        x1 = int(box['xmin'])
+        x2 = int(box['xmax'])
+        y1 = int(box['ymin'])
+        y2 = int(box['ymax'])
+        cv2.rectangle(cv_img, (x1, y1), (x2, y2), color_superclass[name2id[item['type'].lower()]], 2)
+    return o3d.t.geometry.Image(cv_img)
+
+
 class AppWindow:
     MENU_OPEN = 1
     MENU_EXPORT = 2
@@ -118,12 +185,31 @@ class AppWindow:
         # config
         self.config_screenshot = False
 
+        global g_time_beg
+
         self.rgb_images = []
+        self.rgb_label2d_images = []
         self.pcd = []
-        for img, pcd in data.read_frames():
-            self.rgb_images.append(img)
-            self.pcd.append(pcd)
+        label2d_type_set = set()
+        label3d_type_set = set()
+        for framd_id, data_frame in enumerate(data.read_frames()):
+            image, point, label2d, label3d, intr, extr_v2c, extr_v2w = data_frame
+            self.rgb_images.append(image)
+            self.pcd.append(point)
+            self.rgb_label2d_images.append(draw_2d_image_label(image, label2d))
+            if framd_id == 0:
+                print(f'{type(label2d)} {len(label2d)} {type(label2d[0])}')
+                # pprint.pprint(label2d[0])
+
+            for item in label2d:
+                label2d_type_set.add(superclass[name2id[item["type"].lower()]])
+            for item in label3d:
+                label3d_type_set.add(item["type"])
+
+        print(pcolor(f'label2d_type_set: {label2d_type_set}', 'magenta'))
+        print(pcolor(f'label3d_type_set: {label3d_type_set}', 'magenta'))
         self.num = len(self.pcd)
+        print(pcolor(f'loading data of {self.num} frames elapsed {time.time() - g_time_beg:.3f} seconds', 'cyan'))
 
         self.geometry = o3d.geometry.PointCloud()
 
@@ -146,6 +232,11 @@ class AppWindow:
         self.panel.add_child(gui.Label("Color image"))
         self.rgb_widget = gui.ImageWidget(self.rgb_images[0])
         self.panel.add_child(self.rgb_widget)
+
+        # RGB + 2D Label
+        self.panel.add_child(gui.Label("Color image + label2d"))
+        self.rgb_label2d_widget = gui.ImageWidget(self.rgb_images[0])
+        self.panel.add_child(self.rgb_label2d_widget)
         self.window.add_child(self.panel)
 
         # ---- Menu ----
@@ -227,6 +318,7 @@ class AppWindow:
             time.sleep(0.100)
 
             rgb_frame = self.rgb_images[idx]
+            rgb_label2d_frame = self.rgb_label2d_images[idx]
             pcd = self.pcd[idx]
             idx += 1
 
@@ -242,6 +334,7 @@ class AppWindow:
 
             def update():
                 self.rgb_widget.update_image(rgb_frame)
+                self.rgb_label2d_widget.update_image(rgb_label2d_frame)
                 self.widget3d.scene.clear_geometry()
                 self.widget3d.scene.add_geometry('pointcloud', pcd, self.lit)
 
@@ -249,6 +342,8 @@ class AppWindow:
                 gui.Application.instance.post_to_main_thread(self.window, update)
 
 def main():
+    global g_time_beg
+    g_time_beg = time.time()
     app = o3d.visualization.gui.Application.instance
     app.initialize()
 
