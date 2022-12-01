@@ -101,4 +101,7 @@ pip install -U pip -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirr
   ]
   ```
 
+- [x] draw 2d image label
+- [x] draw 3d point cloud label
+
 <!-- End of File -->

@@ -17,6 +17,7 @@ import copy
 import cv2
 import json
 import logging
+import math
 import numpy as np
 import os
 import os.path as osp
@@ -172,6 +173,31 @@ def draw_2d_image_label(image, label2d):
     return o3d.t.geometry.Image(cv_img)
 
 
+def draw_3d_pointcloud_label(label3d):
+    line_set_col = []
+    for label in label3d:
+        obj_size = [
+            float(label["3d_dimensions"]["l"]),
+            float(label["3d_dimensions"]["w"]),
+            float(label["3d_dimensions"]["h"]),
+        ]
+        yaw_lidar = float(label["rotation"])
+        center_lidar = [
+            float(label["3d_location"]["x"]),
+            float(label["3d_location"]["y"]),
+            float(label["3d_location"]["z"]),
+        ]
+        yaw = np.zeros(3)
+        yaw[2] = yaw_lidar
+        rot_mat = o3d.geometry.get_rotation_matrix_from_xyz(yaw)
+        box3d = o3d.geometry.OrientedBoundingBox(center_lidar, rot_mat, obj_size)
+        line_set = o3d.geometry.LineSet.create_from_oriented_bounding_box(box3d)
+        line_set.paint_uniform_color((1, 0, 0))
+        line_set_col.append(line_set)
+
+    return line_set_col
+
+
 class AppWindow:
     MENU_OPEN = 1
     MENU_EXPORT = 2
@@ -190,6 +216,7 @@ class AppWindow:
         self.rgb_images = []
         self.rgb_label2d_images = []
         self.pcd = []
+        self.pcd_label3d = []
         label2d_type_set = set()
         label3d_type_set = set()
         for framd_id, data_frame in enumerate(data.read_frames()):
@@ -198,20 +225,24 @@ class AppWindow:
             self.pcd.append(point)
             self.rgb_label2d_images.append(draw_2d_image_label(image, label2d))
             if framd_id == 0:
-                print(f'{type(label2d)} {len(label2d)} {type(label2d[0])}')
-                # pprint.pprint(label2d[0])
+                print(f'{type(label3d)} {len(label3d)} {type(label3d[0])}')
+                pprint.pprint(label3d[0])
+                draw_3d_pointcloud_label(label3d)
 
             for item in label2d:
                 label2d_type_set.add(superclass[name2id[item["type"].lower()]])
             for item in label3d:
                 label3d_type_set.add(item["type"])
+            self.pcd_label3d.append(draw_3d_pointcloud_label(label3d))
 
         print(pcolor(f'label2d_type_set: {label2d_type_set}', 'magenta'))
         print(pcolor(f'label3d_type_set: {label3d_type_set}', 'magenta'))
         self.num = len(self.pcd)
         print(pcolor(f'loading data of {self.num} frames elapsed {time.time() - g_time_beg:.3f} seconds', 'cyan'))
 
+        self.coord = o3d.geometry.TriangleMesh.create_coordinate_frame(size=10, origin=[0, 0, 0])
         self.geometry = o3d.geometry.PointCloud()
+
 
         self.window = gui.Application.instance.create_window("DAIR-V2X", 1920, 1080)
         self.window.set_on_layout(self._on_layout)
@@ -223,8 +254,12 @@ class AppWindow:
 
         self.lit = rendering.MaterialRecord()
         self.lit.shader = "defaultLit"
+        self.lit_line = rendering.MaterialRecord()
+        self.lit_line.shader = "unlitLine"
+        self.lit_line.line_width = 3
+
         self.widget3d.scene.show_axes(True)
-        self.widget3d.scene.camera.look_at([70,0,0], [0,0,150], [1,0,1]) # look_at(center, eye, up)
+        self.widget3d.scene.camera.look_at([70,0,0], [-30,0,50], [100,0,50]) # look_at(center, eye, up)
 
         em = self.window.theme.font_size
         margin = 0.5 * em
@@ -296,6 +331,7 @@ class AppWindow:
 
     def _on_menu_viewpoint(self):
         # todo: manually find best viewpoint
+        #       ref: https://github.com/isl-org/Open3D/issues/1483#issuecomment-582121615
         model_mat = self.widget3d.scene.camera.get_model_matrix()
         proj_mat = self.widget3d.scene.camera.get_projection_matrix()
         view_mat = self.widget3d.scene.camera.get_view_matrix()
@@ -320,6 +356,7 @@ class AppWindow:
             rgb_frame = self.rgb_images[idx]
             rgb_label2d_frame = self.rgb_label2d_images[idx]
             pcd = self.pcd[idx]
+            pcd_label = self.pcd_label3d[idx]
             idx += 1
 
             if idx >= len(self.rgb_images):
@@ -335,8 +372,12 @@ class AppWindow:
             def update():
                 self.rgb_widget.update_image(rgb_frame)
                 self.rgb_label2d_widget.update_image(rgb_label2d_frame)
+
                 self.widget3d.scene.clear_geometry()
+                self.widget3d.scene.add_geometry('coord', self.coord, self.lit)
                 self.widget3d.scene.add_geometry('pointcloud', pcd, self.lit)
+                for box_id, box_lineset in enumerate(pcd_label):
+                    self.widget3d.scene.add_geometry(f'bbox-{box_id:03d}', box_lineset, self.lit_line)
 
             if not self.is_done:
                 gui.Application.instance.post_to_main_thread(self.window, update)
