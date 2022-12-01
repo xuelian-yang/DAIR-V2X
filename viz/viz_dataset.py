@@ -21,6 +21,7 @@ import math
 import numpy as np
 import os
 import os.path as osp
+import platform
 import pprint
 import pyscreenshot
 import sys
@@ -56,6 +57,11 @@ cmake -DBUILD_CUDA_MODULE=ON \
 # Install the python wheel with pip
 make -j install-pip-package
 """
+
+# https://stackoverflow.com/a/1857
+isLinux = (platform.system() == "Linux")
+isMacOS = (platform.system() == "Darwin")
+isWindows = (platform.system() == "Windows")
 
 g_time_beg = time.time()
 
@@ -144,7 +150,10 @@ class PathConfig:
 
 
 def get_path():
-    str_root = '/mnt/datax/Datasets/DAIR-V2X-Extracted/cooperative-vehicle-infrastructure-example/infrastructure-side'
+    if isLinux:
+        str_root = '/mnt/datax/Datasets/DAIR-V2X-Extracted/cooperative-vehicle-infrastructure-example/infrastructure-side'
+    else:
+        str_root = 'D:/0-DAIR-V2X-Dataset/DAIR-V2X-C-Example/cooperative-vehicle-infrastructure-example/infrastructure-side'
     dict_name = {
         'image_paths': 'image',                           # jpg
         'point_paths': 'velodyne',                        # pcd

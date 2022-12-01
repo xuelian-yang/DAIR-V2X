@@ -3,6 +3,7 @@
 
 - [Contents](#contents)
 - [conda / pip install](#conda--pip-install)
+- [setup env](#setup-env)
 - [Env](#env)
 - [Check Label](#check-label)
 - [Export Video/GIF](#export-videogif)
@@ -14,6 +15,27 @@
 
 ```bash
 pip install -U pip -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com
+```
+
+# setup env
+
+```bash
+conda create -n o3d python=3.8 -y
+conda activate o3d
+conda install pip
+pip install -U pip
+pip install open3d
+pip install opencv-python
+pip install pillow
+pip install pyscreenshot
+pip install termcolor
+
+git clone --recursive git@github.com:xuelian-yang/DAIR-V2X.git
+cd DAIR-V2X
+git checkout demo
+
+cd viz
+python viz_dataset.py
 ```
 
 # Env
