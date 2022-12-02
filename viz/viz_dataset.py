@@ -24,6 +24,7 @@ import math
 import numpy as np
 import os
 import os.path as osp
+import PIL
 import platform
 import pprint
 import pyscreenshot
@@ -241,6 +242,9 @@ class AppWindow:
         self.config_coordinate = True
         self.config_screenshot = False
 
+        # Screenshots to GIF
+        self.paths_screenshot = []
+
         global g_time_beg
 
         self.rgb_images = []
@@ -425,6 +429,19 @@ class AppWindow:
         win_sz = self.window.content_rect
         print(pcolor(f'content_rect: {win_sz.x} {win_sz.y} {win_sz.width} {win_sz.height}', 'yellow'))
 
+        if not self.config_screenshot:
+            self._create_gif()
+
+    def _create_gif(self):
+        gif_name = osp.join('/mnt/datax/temp', 'DAIR-V2X.gif')
+        frames = []
+        for item in self.paths_screenshot:
+            new_frame = PIL.Image.open(item)
+            frames.append(new_frame)
+        print(pcolor(f'writing {gif_name}', 'red'))
+        frames[0].save(gif_name, format='GIF', append_images=frames[1:], save_all=True, duration=100, loop=0, comment=b'DAIR V2X Visualization')
+        self.paths_screenshot = []
+
     def _update_thread(self):
         idx = 0
         while not self.is_done:
@@ -446,6 +463,7 @@ class AppWindow:
                 save_name = osp.join('/mnt/datax/temp', f'frame-{idx:03d}.png')
                 print(pcolor(f'  write {save_name}', 'blue'))
                 screen.save(save_name)
+                self.paths_screenshot.append(save_name)
 
             def update():
                 self.rgb_widget.update_image(rgb_frame)

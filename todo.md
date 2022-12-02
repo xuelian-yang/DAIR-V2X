@@ -183,6 +183,7 @@ pip install -U pip -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirr
 - [x] draw 2d image label
 - [x] draw 3d point cloud label
 - [x] [visualization with intensity](https://github.com/isl-org/Open3D/issues/2545#issuecomment-987119956)
+- [x] save screenshot sequences as gif
 - [ ] point cloud with texture
 
 <!-- End of File -->
