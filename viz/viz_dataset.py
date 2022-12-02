@@ -9,6 +9,8 @@ References
         https://github.com/isl-org/Open3D/issues/2869#issuecomment-761942166
     Open3D example - video.py
         https://github.com/isl-org/Open3D/blob/master/examples/python/visualization/video.py
+    How to set min/max for colormap when rendering a pointcloud? #2545
+        https://github.com/isl-org/Open3D/issues/2545#issuecomment-987119956
 
 pip install pyscreenshot
 """
@@ -34,6 +36,7 @@ try:
     import open3d as o3d
     import open3d.visualization.gui as gui
     import open3d.visualization.rendering as rendering
+    from open3d.ml.vis import Colormap
 except ImportError:
     raise ImportError(
         'Please run "pip install open3d" to install open3d first.')
@@ -133,13 +136,19 @@ class PathConfig:
                 logging.info(f'load_json({path})')
             return data
 
+        # image = o3d.io.read_image(self.image_paths[k]) 
         image = o3d.t.io.read_image(self.image_paths[k])
-        point = o3d.io.read_point_cloud(self.point_paths[k])
+        # point = o3d.io.read_point_cloud(self.point_paths[k])
+        point = o3d.t.io.read_point_cloud(self.point_paths[k])
         label2d = load_json(self.label2d_paths[k])
         label3d = load_json(self.label3d_paths[k])
         intr = load_json(self.intr_paths[k])
         extr_v2c = load_json(self.extr_v2c_paths[k])
         extr_v2w = load_json(self.extr_v2w_paths[k])
+
+        if isinstance(point, o3d.t.geometry.PointCloud):
+            point.point['__visualization_scalar'] = point.point.intensity
+
         return image, point, label2d, label3d, intr, extr_v2c, extr_v2w
 
     def read_frames(self):
@@ -213,11 +222,15 @@ class AppWindow:
     MENU_QUIT = 3
     MENU_SHOW_SETTINGS = 11
     MENU_ABOUT = 21
-    MENU_VIEWPOINT = 31
-    MENU_SCREENSHOT = 32
+    MENU_ANIMATION = 31
+    MENU_COORDINATE = 32
+    MENU_VIEWPOINT = 33
+    MENU_SCREENSHOT = 34
 
     def __init__(self, data):
         # config
+        self.config_animation = True
+        self.config_coordinate = True
         self.config_screenshot = False
 
         global g_time_beg
@@ -233,10 +246,23 @@ class AppWindow:
             self.rgb_images.append(image)
             self.pcd.append(point)
             self.rgb_label2d_images.append(draw_2d_image_label(image, label2d))
-            if framd_id == 0:
+
+            if framd_id == 0: # debug
                 print(f'{type(label3d)} {len(label3d)} {type(label3d[0])}')
                 pprint.pprint(label3d[0])
                 draw_3d_pointcloud_label(label3d)
+
+                if isinstance(point, o3d.geometry.PointCloud):
+                    print(pcolor(f'o3d.geometry.PointCloud:', 'yellow'))
+                    print(pcolor(f'  has_points:      {point.has_points()}', 'yellow'))
+                    print(pcolor(f'  has_normals:     {point.has_normals()}', 'yellow'))
+                    print(pcolor(f'  has_colors:      {point.has_colors()}', 'yellow'))
+                    print(pcolor(f'  has_covariances: {point.has_covariances()}', 'yellow'))
+
+                if isinstance(point, o3d.t.geometry.PointCloud):
+                    print(pcolor(f'o3d.t.geometry.PointCloud:', 'yellow'))
+                    print(pcolor(f'{type(point.point)} {point.point.primary_key} {str(point.point)}', 'yellow'))
+                    print(pcolor(f'  intensity: {np.amin(point.point.intensity.numpy())} {np.amax(point.point.intensity.numpy())} {np.mean(point.point.intensity.numpy())}', 'yellow'))
 
             for item in label2d:
                 label2d_type_set.add(superclass[name2id[item["type"].lower()]])
@@ -252,7 +278,6 @@ class AppWindow:
         self.coord = o3d.geometry.TriangleMesh.create_coordinate_frame(size=10, origin=[0, 0, 0])
         self.geometry = o3d.geometry.PointCloud()
 
-
         self.window = gui.Application.instance.create_window("DAIR-V2X", 1920, 1080)
         self.window.set_on_layout(self._on_layout)
         self.window.set_on_close(self._on_close)
@@ -267,7 +292,20 @@ class AppWindow:
         self.lit_line.shader = "unlitLine"
         self.lit_line.line_width = 3
 
-        self.widget3d.scene.show_axes(True)
+        # colormap = Colormap.make_rainbow()
+        colormap = Colormap.make_greyscale()
+        colormap = list(
+            rendering.Gradient.Point(pt.value, pt.color + [1.0])
+            for pt in colormap.points)
+
+        self.lit_pc = rendering.MaterialRecord()
+        self.lit_pc.shader = "unlitGradient"
+        self.lit_pc.gradient = rendering.Gradient(colormap)
+        self.lit_pc.gradient.mode = rendering.Gradient.GRADIENT
+        self.lit_pc.scalar_min = 0.0
+        self.lit_pc.scalar_max = 1.0
+
+        self.widget3d.scene.show_axes(False)
         self.widget3d.scene.camera.look_at([70,0,0], [-30,0,50], [100,0,50]) # look_at(center, eye, up)
 
         em = self.window.theme.font_size
@@ -301,7 +339,11 @@ class AppWindow:
             help_menu.add_item("About", AppWindow.MENU_ABOUT)
             # debug
             debug_menu = gui.Menu()
-            debug_menu.add_item("Show viewpoint", AppWindow.MENU_VIEWPOINT)
+            debug_menu.add_item("Enable Animation", AppWindow.MENU_ANIMATION)
+            debug_menu.set_checked(AppWindow.MENU_ANIMATION, True)
+            debug_menu.add_item("Show Coordinate", AppWindow.MENU_COORDINATE)
+            debug_menu.set_checked(AppWindow.MENU_COORDINATE, True)
+            debug_menu.add_item("Show Viewpoint", AppWindow.MENU_VIEWPOINT)
             debug_menu.add_item("Take Screenshot", AppWindow.MENU_SCREENSHOT)
 
             # menubar
@@ -314,6 +356,8 @@ class AppWindow:
 
         # connect the menu items to the window
         self.window.set_on_menu_item_activated(AppWindow.MENU_QUIT, self._on_menu_quit)
+        self.window.set_on_menu_item_activated(AppWindow.MENU_ANIMATION, self._on_menu_animation)
+        self.window.set_on_menu_item_activated(AppWindow.MENU_COORDINATE, self._on_menu_coordinate)
         self.window.set_on_menu_item_activated(AppWindow.MENU_VIEWPOINT, self._on_menu_viewpoint)
         self.window.set_on_menu_item_activated(AppWindow.MENU_SCREENSHOT, self._on_menu_screenshot)
 
@@ -337,6 +381,14 @@ class AppWindow:
     def _on_menu_quit(self):
         self.is_done = True
         gui.Application.instance.quit()
+
+    def _on_menu_animation(self):
+        self.config_animation = not self.config_animation
+        gui.Application.instance.menubar.set_checked(AppWindow.MENU_ANIMATION, self.config_animation)
+
+    def _on_menu_coordinate(self):
+        self.config_coordinate = not self.config_coordinate
+        gui.Application.instance.menubar.set_checked(AppWindow.MENU_COORDINATE, self.config_coordinate)
 
     def _on_menu_viewpoint(self):
         # todo: manually find best viewpoint
@@ -366,10 +418,11 @@ class AppWindow:
             rgb_label2d_frame = self.rgb_label2d_images[idx]
             pcd = self.pcd[idx]
             pcd_label = self.pcd_label3d[idx]
-            idx += 1
 
-            if idx >= len(self.rgb_images):
-                idx = 0
+            if self.config_animation:
+                idx += 1
+                if idx >= len(self.rgb_images):
+                    idx = 0
 
             if self.config_screenshot:
                 win_sz = self.window.content_rect
@@ -383,8 +436,9 @@ class AppWindow:
                 self.rgb_label2d_widget.update_image(rgb_label2d_frame)
 
                 self.widget3d.scene.clear_geometry()
-                self.widget3d.scene.add_geometry('coord', self.coord, self.lit)
-                self.widget3d.scene.add_geometry('pointcloud', pcd, self.lit)
+                if self.config_coordinate:
+                    self.widget3d.scene.add_geometry('coord', self.coord, self.lit)
+                self.widget3d.scene.add_geometry('pointcloud', pcd, self.lit_pc)
                 for box_id, box_lineset in enumerate(pcd_label):
                     self.widget3d.scene.add_geometry(f'bbox-{box_id:03d}', box_lineset, self.lit_line)
 
@@ -428,5 +482,5 @@ if __name__ == "__main__":
     print(pcolor(f'sys.version:        {sys.version}', 'yellow'))
     print(pcolor(f'open3d.__version__: {o3d.__version__}\n', 'yellow'))
 
-    # main()
-    analysis_pcd()
+    main()
+    # analysis_pcd()
