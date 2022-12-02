@@ -494,5 +494,7 @@ if __name__ == "__main__":
     print(pcolor(f'sys.version:        {sys.version}', 'yellow'))
     print(pcolor(f'open3d.__version__: {o3d.__version__}\n', 'yellow'))
 
+    o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Error)
+
     main()
     # analysis_pcd()
