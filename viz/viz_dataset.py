@@ -271,6 +271,10 @@ class AppWindow:
                     print(pcolor(f'o3d.t.geometry.PointCloud:', 'yellow'))
                     print(pcolor(f'{type(point.point)} {point.point.primary_key} {str(point.point)}', 'yellow'))
                     print(pcolor(f'  intensity: {np.amin(point.point.intensity.numpy())} {np.amax(point.point.intensity.numpy())} {np.mean(point.point.intensity.numpy())}', 'yellow'))
+                    print(pcolor(f'  device:  {point.device}', 'red'))
+                    print(pcolor(f'  is_cpu:  {point.is_cpu}', 'red'))
+                    print(pcolor(f'  is_cuda: {point.is_cuda}', 'red'))
+                    print(pcolor(f'  material: {point.material}', 'red'))
 
             for item in label2d:
                 label2d_type_set.add(superclass[name2id[item["type"].lower()]])

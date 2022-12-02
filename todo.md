@@ -4,6 +4,8 @@
 - [Contents](#contents)
 - [conda / pip install](#conda--pip-install)
 - [setup env](#setup-env)
+- [build open3d with OPEN3D\_ML from source (Linux)](#build-open3d-with-open3d_ml-from-source-linux)
+- [build open3d with OPEN3D\_ML from source (Windows)](#build-open3d-with-open3d_ml-from-source-windows)
 - [Env](#env)
 - [Check Label](#check-label)
 - [Export Video/GIF](#export-videogif)
@@ -35,6 +37,62 @@ cd DAIR-V2X
 git checkout demo
 
 python viz/viz_dataset.py
+```
+
+# build open3d with OPEN3D_ML from source (Linux)
+
+```bash
+# http://www.open3d.org/docs/release/compilation.html
+git clone --recursive git@github.com:isl-org/Open3D.git
+cd Open3D
+bash util/install_deps_ubuntu.sh
+
+which python
+mkdir build
+cd build
+cmake -DBUILD_CUDA_MODULE=ON \
+      -DGLIBCXX_USE_CXX11_ABI=OFF \
+      -DBUILD_PYTORCH_OPS=ON \
+      -DBUILD_TENSORFLOW_OPS=ON \
+      -DBUNDLE_OPEN3D_ML=ON \
+      -DPython3_ROOT=/home/sigma/anaconda3/envs/o3d-ml/bin/python \
+      -DOPEN3D_ML_ROOT=/mnt/datax/github-install/Open3D-ML \
+      ..
+
+make -j install-pip-package
+
+python -c "import open3d"
+
+python -c "import open3d.ml.torch as ml3d"
+python -c "import open3d.ml.tf as ml3d"
+```
+
+# build open3d with OPEN3D_ML from source (Windows)
+
+```bash
+git clone --recursive git@github.com:isl-org/Open3D.git
+cd Open3D
+mkdir build
+cd build
+
+which python
+cmake -G "Visual Studio 16 2019" \
+      -A x64 \
+      -DBUILD_CUDA_MODULE=ON \
+      -DGLIBCXX_USE_CXX11_ABI=OFF \
+      -DBUILD_PYTORCH_OPS=ON \
+      -DBUILD_TENSORFLOW_OPS=ON \
+      -DBUNDLE_OPEN3D_ML=ON \
+      -DOPEN3D_ML_ROOT=https://github.com/isl-org/Open3D-ML.git \
+      -DCMAKE_INSTALL_PREFIX="<open3d_install_directory>" \
+      ..
+
+cmake --build . --config Release --target ALL_BUILD
+# :: Activate the virtualenv first
+# :: Install pip package in the current python environment
+cmake --build . --config Release --target install-pip-package
+
+python -c "import open3d; print(open3d)"
 ```
 
 # Env
