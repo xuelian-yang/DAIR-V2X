@@ -17,6 +17,7 @@ pip install pyscreenshot
 
 import copy
 import cv2
+import importlib.util
 import json
 import logging
 import math
@@ -36,10 +37,17 @@ try:
     import open3d as o3d
     import open3d.visualization.gui as gui
     import open3d.visualization.rendering as rendering
-    from open3d.ml.vis import Colormap
+    # from open3d.ml.vis import Colormap
 except ImportError:
     raise ImportError(
         'Please run "pip install open3d" to install open3d first.')
+
+has_ml3d = importlib.util.find_spec('open3d._ml3d')
+if has_ml3d:
+    print(f'has _ml3d')
+    from open3d.ml.vis import Colormap
+else:
+    print(f'no _ml3d')
 
 """
 Open3D-ML
@@ -292,18 +300,22 @@ class AppWindow:
         self.lit_line.shader = "unlitLine"
         self.lit_line.line_width = 3
 
-        # colormap = Colormap.make_rainbow()
-        colormap = Colormap.make_greyscale()
-        colormap = list(
-            rendering.Gradient.Point(pt.value, pt.color + [1.0])
-            for pt in colormap.points)
-
         self.lit_pc = rendering.MaterialRecord()
-        self.lit_pc.shader = "unlitGradient"
-        self.lit_pc.gradient = rendering.Gradient(colormap)
-        self.lit_pc.gradient.mode = rendering.Gradient.GRADIENT
-        self.lit_pc.scalar_min = 0.0
-        self.lit_pc.scalar_max = 1.0
+        self.lit_pc.shader = "defaultLit"
+
+        if has_ml3d:
+            # colormap = Colormap.make_rainbow()
+            colormap = Colormap.make_greyscale()
+            colormap = list(
+                rendering.Gradient.Point(pt.value, pt.color + [1.0])
+                for pt in colormap.points)
+
+            self.lit_pc.shader = "unlitGradient"
+            self.lit_pc.scalar_min = 0.0
+            self.lit_pc.scalar_max = 1.0
+            self.lit_pc.gradient = rendering.Gradient(colormap)
+            self.lit_pc.gradient.mode = rendering.Gradient.GRADIENT
+
 
         self.widget3d.scene.show_axes(False)
         self.widget3d.scene.camera.look_at([70,0,0], [-30,0,50], [100,0,50]) # look_at(center, eye, up)
