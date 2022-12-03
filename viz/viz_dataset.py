@@ -11,6 +11,8 @@ References
         https://github.com/isl-org/Open3D/blob/master/examples/python/visualization/video.py
     How to set min/max for colormap when rendering a pointcloud? #2545
         https://github.com/isl-org/Open3D/issues/2545#issuecomment-987119956
+    Multiple viewports per window
+        https://github.com/isl-org/Open3D/issues/999#issuecomment-720839907
 
 pip install pyscreenshot
 """
@@ -157,7 +159,6 @@ class PathConfig:
 
         if isinstance(point, o3d.t.geometry.PointCloud):
             point.point['__visualization_scalar'] = point.point.intensity
-
         return image, point, label2d, label3d, intr, extr_v2c, extr_v2w
 
     def read_frames(self):
@@ -221,7 +222,6 @@ def draw_3d_pointcloud_label(label3d):
         line_set = o3d.geometry.LineSet.create_from_oriented_bounding_box(box3d)
         line_set.paint_uniform_color((1, 0, 0))
         line_set_col.append(line_set)
-
     return line_set_col
 
 
@@ -237,7 +237,9 @@ class AppWindow:
     MENU_SCREENSHOT = 34
 
     def __init__(self, data):
-        # config
+        global g_time_beg
+
+        # config variables
         self.config_animation = True
         self.config_coordinate = True
         self.config_screenshot = False
@@ -245,14 +247,14 @@ class AppWindow:
         # Screenshots to GIF
         self.paths_screenshot = []
 
-        global g_time_beg
-
+        # data for visualization
         self.rgb_images = []
         self.rgb_label2d_images = []
         self.pcd = []
         self.pcd_label3d = []
         label2d_type_set = set()
         label3d_type_set = set()
+
         for framd_id, data_frame in enumerate(data.read_frames()):
             image, point, label2d, label3d, intr, extr_v2c, extr_v2w = data_frame
             self.rgb_images.append(image)
@@ -291,9 +293,11 @@ class AppWindow:
         self.num = len(self.pcd)
         print(pcolor(f'loading data of {self.num} frames elapsed {time.time() - g_time_beg:.3f} seconds', 'cyan'))
 
+        # 3D geometry
         self.coord = o3d.geometry.TriangleMesh.create_coordinate_frame(size=10, origin=[0, 0, 0])
         self.geometry = o3d.geometry.PointCloud()
 
+        # main window
         self.window = gui.Application.instance.create_window("DAIR-V2X", 1920, 1080)
         self.window.set_on_layout(self._on_layout)
         self.window.set_on_close(self._on_close)
@@ -301,6 +305,18 @@ class AppWindow:
         self.widget3d = gui.SceneWidget()
         self.widget3d.scene = rendering.Open3DScene(self.window.renderer)
         self.window.add_child(self.widget3d)
+
+        self.widget3d_top_right = gui.SceneWidget()
+        self.widget3d_top_right.scene = rendering.Open3DScene(self.window.renderer)
+        self.window.add_child(self.widget3d_top_right)
+
+        self.widget3d_bottom_left = gui.SceneWidget()
+        self.widget3d_bottom_left.scene = rendering.Open3DScene(self.window.renderer)
+        self.window.add_child(self.widget3d_bottom_left)
+
+        self.widget3d_bottom_right = gui.SceneWidget()
+        self.widget3d_bottom_right.scene = rendering.Open3DScene(self.window.renderer)
+        self.window.add_child(self.widget3d_bottom_right)
 
         self.lit = rendering.MaterialRecord()
         self.lit.shader = "defaultLit"
@@ -314,9 +330,7 @@ class AppWindow:
         if has_ml3d:
             # colormap = Colormap.make_rainbow()
             colormap = Colormap.make_greyscale()
-            colormap = list(
-                rendering.Gradient.Point(pt.value, pt.color + [1.0])
-                for pt in colormap.points)
+            colormap = list(rendering.Gradient.Point(pt.value, pt.color + [1.0]) for pt in colormap.points)
 
             self.lit_pc.shader = "unlitGradient"
             self.lit_pc.scalar_min = 0.0
@@ -324,9 +338,19 @@ class AppWindow:
             self.lit_pc.gradient = rendering.Gradient(colormap)
             self.lit_pc.gradient.mode = rendering.Gradient.GRADIENT
 
-
         self.widget3d.scene.show_axes(False)
         self.widget3d.scene.camera.look_at([70,0,0], [-30,0,50], [100,0,50]) # look_at(center, eye, up)
+
+        self.widget3d_top_right.background_color = gui.Color(r=0, b=0.5, g=0)
+        self.widget3d_top_right.scene.add_geometry('coord', self.coord, self.lit)
+        self.widget3d_top_right.setup_camera(75, self.widget3d_top_right.scene.bounding_box, (0, 0, 0))
+        # self.widget3d_top_right.scene.show_axes(True)
+
+        self.widget3d_bottom_left.scene.add_geometry('coord', self.coord, self.lit)
+        self.widget3d_bottom_left.setup_camera(75, self.widget3d_bottom_left.scene.bounding_box, (0, 0, 0))
+
+        self.widget3d_bottom_right.scene.add_geometry('coord', self.coord, self.lit)
+        self.widget3d_bottom_right.setup_camera(75, self.widget3d_bottom_right.scene.bounding_box, (0, 0, 0))
 
         em = self.window.theme.font_size
         margin = 0.5 * em
@@ -363,6 +387,7 @@ class AppWindow:
             debug_menu.set_checked(AppWindow.MENU_ANIMATION, True)
             debug_menu.add_item("Show Coordinate", AppWindow.MENU_COORDINATE)
             debug_menu.set_checked(AppWindow.MENU_COORDINATE, True)
+            debug_menu.add_separator()
             debug_menu.add_item("Show Viewpoint", AppWindow.MENU_VIEWPOINT)
             debug_menu.add_item("Take Screenshot", AppWindow.MENU_SCREENSHOT)
 
@@ -385,14 +410,19 @@ class AppWindow:
         threading.Thread(target=self._update_thread).start()
 
     def _on_layout(self, layout_context):
-        contentRect = self.window.content_rect
-        panel_width = 35 * layout_context.theme.font_size
-        self.widget3d.frame = gui.Rect(contentRect.x, contentRect.y,
-                                       contentRect.width - panel_width,
-                                       contentRect.height)
-        self.panel.frame = gui.Rect(self.widget3d.frame.get_right(),
-                                    contentRect.y, panel_width,
-                                    contentRect.height)
+        r = self.window.content_rect
+        gap = 3
+        panel_width = int(r.width * 0.35)
+        h_3d = r.height / 2 - gap
+        w_3d = (r.width - panel_width) / 2 - gap
+
+        # 3D
+        self.widget3d.frame = gui.Rect(r.x, r.y, w_3d, h_3d)
+        self.widget3d_top_right.frame = gui.Rect(self.widget3d.frame.get_right() + gap, r.y, w_3d, h_3d)
+        self.widget3d_bottom_left.frame = gui.Rect(r.x, self.widget3d.frame.get_bottom() + gap, w_3d, h_3d)
+        self.widget3d_bottom_right.frame = gui.Rect(self.widget3d.frame.get_right() + gap, self.widget3d.frame.get_bottom() + gap, w_3d, h_3d)
+        # 2D
+        self.panel.frame = gui.Rect(r.width - panel_width, r.y, panel_width, r.height)
 
     def _on_close(self):
         self.is_done = True
@@ -475,6 +505,14 @@ class AppWindow:
                 self.widget3d.scene.add_geometry('pointcloud', pcd, self.lit_pc)
                 for box_id, box_lineset in enumerate(pcd_label):
                     self.widget3d.scene.add_geometry(f'bbox-{box_id:03d}', box_lineset, self.lit_line)
+
+                # other windows
+                self.widget3d_top_right.scene.clear_geometry()
+                self.widget3d_top_right.scene.add_geometry('coord', self.coord, self.lit)
+                self.widget3d_bottom_left.scene.clear_geometry()
+                self.widget3d_bottom_left.scene.add_geometry('coord', self.coord, self.lit)
+                self.widget3d_bottom_right.scene.clear_geometry()
+                self.widget3d_bottom_right.scene.add_geometry('coord', self.coord, self.lit)
 
             if not self.is_done:
                 gui.Application.instance.post_to_main_thread(self.window, update)
