@@ -373,10 +373,12 @@ class AppWindow:
         self.widget3d.scene.show_axes(False)
         self.widget3d.scene.camera.look_at([70,0,0], [-30,0,50], [100,0,50]) # look_at(center, eye, up)
 
-        self.widget3d_top_right.background_color = gui.Color(r=0, b=0.5, g=0)
+        self.widget3d_top_right.scene.set_background([0.1, 0.1, 0.5, 0.5])
         self.widget3d_top_right.scene.add_geometry('coord', self.coord, self.lit)
         self.widget3d_top_right.setup_camera(75, self.widget3d_top_right.scene.bounding_box, (0, 0, 0))
         # self.widget3d_top_right.scene.show_axes(True)
+        # self.widget3d_top_right.scene.show_skybox(True)
+        # self.widget3d_top_right.scene.show_ground_plane(True)
 
         self.widget3d_bottom_left.scene.add_geometry('coord', self.coord, self.lit)
         self.widget3d_bottom_left.setup_camera(75, self.widget3d_bottom_left.scene.bounding_box, (0, 0, 0))
@@ -385,7 +387,16 @@ class AppWindow:
         self.widget3d_bottom_right.setup_camera(75, self.widget3d_bottom_right.scene.bounding_box, (0, 0, 0))
         self.widget3d_bottom_right.scene.add_geometry('mesh', self.mesh[0], self.lit)
         self.widget3d_bottom_right.setup_camera(75, self.widget3d_bottom_right.scene.bounding_box, (0, 0, 0))
+        # self.widget3d_bottom_right.scene.show_skybox(True)
+        self.widget3d_bottom_right.scene.set_background([0.1, 0.1, 0.5, 1.0])
         self.widget3d_bottom_right.scene.camera.look_at([70,0,0], [-30,0,50], [100,0,50]) # look_at(center, eye, up)
+
+        # debug:
+        print(pcolor(f'  I> widget3d.bg_color:              {self.widget3d.scene.background_color}', 'blue'))
+        print(pcolor(f'  I> widget3d_top_right.bg_color:    {self.widget3d_top_right.scene.background_color}', 'blue'))
+        print(pcolor(f'  I> widget3d_bottom_left.bg_color:  {self.widget3d_bottom_left.scene.background_color}', 'blue'))
+        print(pcolor(f'  I> widget3d_bottom_right.bg_color: {self.widget3d_bottom_right.scene.background_color}', 'blue'))
+
 
         em = self.window.theme.font_size
         margin = 0.5 * em
