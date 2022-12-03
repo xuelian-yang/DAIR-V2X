@@ -334,9 +334,10 @@ class AppWindow:
         self.window.set_on_layout(self._on_layout)
         self.window.set_on_close(self._on_close)
 
-        self.widget3d = gui.SceneWidget()
-        self.widget3d.scene = rendering.Open3DScene(self.window.renderer)
-        self.window.add_child(self.widget3d)
+        # 3D SceneWidget Grid
+        self.widget3d_top_left = gui.SceneWidget()
+        self.widget3d_top_left.scene = rendering.Open3DScene(self.window.renderer)
+        self.window.add_child(self.widget3d_top_left)
 
         self.widget3d_top_right = gui.SceneWidget()
         self.widget3d_top_right.scene = rendering.Open3DScene(self.window.renderer)
@@ -370,15 +371,14 @@ class AppWindow:
             self.lit_pc.gradient = rendering.Gradient(colormap)
             self.lit_pc.gradient.mode = rendering.Gradient.GRADIENT
 
-        self.widget3d.scene.show_axes(False)
-        self.widget3d.scene.camera.look_at([70,0,0], [-30,0,50], [100,0,50]) # look_at(center, eye, up)
+        self.widget3d_top_left.scene.show_axes(False)
+        self.widget3d_top_left.scene.camera.look_at([70,0,0], [-30,0,50], [100,0,50]) # look_at(center, eye, up)
 
         self.widget3d_top_right.scene.set_background([0.1, 0.1, 0.5, 0.5])
         self.widget3d_top_right.scene.add_geometry('coord', self.coord, self.lit)
         self.widget3d_top_right.setup_camera(75, self.widget3d_top_right.scene.bounding_box, (0, 0, 0))
         # self.widget3d_top_right.scene.show_axes(True)
-        # self.widget3d_top_right.scene.show_skybox(True)
-        # self.widget3d_top_right.scene.show_ground_plane(True)
+        self.widget3d_top_right.scene.show_skybox(True)
 
         self.widget3d_bottom_left.scene.add_geometry('coord', self.coord, self.lit)
         self.widget3d_bottom_left.setup_camera(75, self.widget3d_bottom_left.scene.bounding_box, (0, 0, 0))
@@ -392,23 +392,47 @@ class AppWindow:
         self.widget3d_bottom_right.scene.camera.look_at([70,0,0], [-30,0,50], [100,0,50]) # look_at(center, eye, up)
 
         # debug:
-        print(pcolor(f'  I> widget3d.bg_color:              {self.widget3d.scene.background_color}', 'blue'))
+        print(pcolor(f'  I> widget3d.bg_color:              {self.widget3d_top_left.scene.background_color}', 'blue'))
         print(pcolor(f'  I> widget3d_top_right.bg_color:    {self.widget3d_top_right.scene.background_color}', 'blue'))
         print(pcolor(f'  I> widget3d_bottom_left.bg_color:  {self.widget3d_bottom_left.scene.background_color}', 'blue'))
         print(pcolor(f'  I> widget3d_bottom_right.bg_color: {self.widget3d_bottom_right.scene.background_color}', 'blue'))
 
-
+        # Right panel
         em = self.window.theme.font_size
         margin = 0.5 * em
         self.panel = gui.Vert(0.5 * em, gui.Margins(margin))
-        self.panel.add_child(gui.Label("Color image"))
+        self.panel.add_child(gui.Label("Color Image"))
         self.rgb_widget = gui.ImageWidget(self.rgb_images[0])
         self.panel.add_child(self.rgb_widget)
 
         # RGB + 2D Label
-        self.panel.add_child(gui.Label("Color image + label2d"))
+        self.panel.add_child(gui.Label("Color Image + Label2D"))
         self.rgb_label2d_widget = gui.ImageWidget(self.rgb_images[0])
         self.panel.add_child(self.rgb_label2d_widget)
+
+        # Config Panel
+        self._fileedit = gui.TextEdit()
+        filedlgbutton = gui.Button("...")
+        filedlgbutton.horizontal_padding_em = 0.5
+        filedlgbutton.vertical_padding_em = 0
+
+        fileedit_layout = gui.Horiz()
+        fileedit_layout.add_child(gui.Label("Model file"))
+        fileedit_layout.add_child(self._fileedit)
+        fileedit_layout.add_fixed(0.25 * em)
+        fileedit_layout.add_child(filedlgbutton)
+
+        collapse = gui.CollapsableVert("Config", 0.33 * em, gui.Margins(em, 0, 0, 0))
+        collapse.add_child(fileedit_layout)
+
+        self._progress = gui.ProgressBar()
+        self._progress.value = 0
+        prog_layout = gui.Horiz(em)
+        prog_layout.add_child(gui.Label("Cloud to Mesh Progress..."))
+        prog_layout.add_child(self._progress)
+        collapse.add_child(prog_layout)
+
+        self.panel.add_child(collapse)
         self.window.add_child(self.panel)
 
     def _init_menu(self):
@@ -456,15 +480,15 @@ class AppWindow:
     def _on_layout(self, layout_context):
         r = self.window.content_rect
         gap = 3
-        panel_width = int(r.width * 0.35)
+        panel_width = int(r.width * 0.30)
         h_3d = (r.height - 3*gap) / 2
         w_3d = (r.width - 3*gap - panel_width) / 2
 
         # 3D
-        self.widget3d.frame              = gui.Rect(r.x+gap, r.y+gap, w_3d, h_3d)
-        self.widget3d_bottom_left.frame  = gui.Rect(r.x+gap, self.widget3d.frame.get_bottom()+gap, w_3d, h_3d)
-        self.widget3d_top_right.frame    = gui.Rect(self.widget3d.frame.get_right()+gap, r.y+gap, w_3d, h_3d)
-        self.widget3d_bottom_right.frame = gui.Rect(self.widget3d.frame.get_right()+gap, self.widget3d.frame.get_bottom()+gap, w_3d, h_3d)
+        self.widget3d_top_left.frame              = gui.Rect(r.x+gap, r.y+gap, w_3d, h_3d)
+        self.widget3d_bottom_left.frame  = gui.Rect(r.x+gap, self.widget3d_top_left.frame.get_bottom()+gap, w_3d, h_3d)
+        self.widget3d_top_right.frame    = gui.Rect(self.widget3d_top_left.frame.get_right()+gap, r.y+gap, w_3d, h_3d)
+        self.widget3d_bottom_right.frame = gui.Rect(self.widget3d_top_left.frame.get_right()+gap, self.widget3d_top_left.frame.get_bottom()+gap, w_3d, h_3d)
         # 2D
         self.panel.frame                 = gui.Rect(r.width - panel_width, r.y, panel_width, r.height)
 
@@ -487,9 +511,9 @@ class AppWindow:
     def _on_menu_viewpoint(self):
         # todo: manually find best viewpoint
         #       ref: https://github.com/isl-org/Open3D/issues/1483#issuecomment-582121615
-        model_mat = self.widget3d.scene.camera.get_model_matrix()
-        proj_mat = self.widget3d.scene.camera.get_projection_matrix()
-        view_mat = self.widget3d.scene.camera.get_view_matrix()
+        model_mat = self.widget3d_top_left.scene.camera.get_model_matrix()
+        proj_mat = self.widget3d_top_left.scene.camera.get_projection_matrix()
+        view_mat = self.widget3d_top_left.scene.camera.get_view_matrix()
         print(pcolor(f'=== model_mat ===', 'blue'))
         print(f'{model_mat}')
         print(pcolor(f'=== proj_mat ===', 'blue'))
@@ -543,12 +567,12 @@ class AppWindow:
                 self.rgb_widget.update_image(rgb_frame)
                 self.rgb_label2d_widget.update_image(rgb_label2d_frame)
 
-                self.widget3d.scene.clear_geometry()
+                self.widget3d_top_left.scene.clear_geometry()
                 if self.config_coordinate:
-                    self.widget3d.scene.add_geometry('coord', self.coord, self.lit)
-                self.widget3d.scene.add_geometry('pointcloud', pcd, self.lit_pc)
+                    self.widget3d_top_left.scene.add_geometry('coord', self.coord, self.lit)
+                self.widget3d_top_left.scene.add_geometry('pointcloud', pcd, self.lit_pc)
                 for box_id, box_lineset in enumerate(pcd_label):
-                    self.widget3d.scene.add_geometry(f'bbox-{box_id:03d}', box_lineset, self.lit_line)
+                    self.widget3d_top_left.scene.add_geometry(f'bbox-{box_id:03d}', box_lineset, self.lit_line)
 
                 # other windows
                 self.widget3d_top_right.scene.clear_geometry()
