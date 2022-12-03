@@ -247,11 +247,20 @@ class AppWindow:
         # Screenshots to GIF
         self.paths_screenshot = []
 
+        self._init_data(data)
+        self._init_ui()
+        self._init_menu()
+
+        self.is_done = False
+        threading.Thread(target=self._update_thread).start()
+
+    def _init_data(self, data):
         # data for visualization
         self.rgb_images = []
         self.rgb_label2d_images = []
         self.pcd = []
         self.pcd_label3d = []
+
         label2d_type_set = set()
         label3d_type_set = set()
 
@@ -263,7 +272,7 @@ class AppWindow:
 
             if framd_id == 0: # debug
                 print(f'{type(label3d)} {len(label3d)} {type(label3d[0])}')
-                pprint.pprint(label3d[0])
+                # pprint.pprint(label3d[0])
                 draw_3d_pointcloud_label(label3d)
 
                 if isinstance(point, o3d.geometry.PointCloud):
@@ -288,15 +297,16 @@ class AppWindow:
                 label3d_type_set.add(item["type"])
             self.pcd_label3d.append(draw_3d_pointcloud_label(label3d))
 
-        print(pcolor(f'label2d_type_set: {label2d_type_set}', 'magenta'))
-        print(pcolor(f'label3d_type_set: {label3d_type_set}', 'magenta'))
+        print(pcolor(f'> label2d_type_set: {label2d_type_set}', 'magenta'))
+        print(pcolor(f'> label3d_type_set: {label3d_type_set}', 'magenta'))
         self.num = len(self.pcd)
-        print(pcolor(f'loading data of {self.num} frames elapsed {time.time() - g_time_beg:.3f} seconds', 'cyan'))
+        print(pcolor(f'>> loading data of {self.num} frames elapsed {time.time() - g_time_beg:.3f} seconds', 'cyan'))
 
         # 3D geometry
         self.coord = o3d.geometry.TriangleMesh.create_coordinate_frame(size=10, origin=[0, 0, 0])
         self.geometry = o3d.geometry.PointCloud()
 
+    def _init_ui(self):
         # main window
         self.window = gui.Application.instance.create_window("DAIR-V2X", 1920, 1080)
         self.window.set_on_layout(self._on_layout)
@@ -365,6 +375,7 @@ class AppWindow:
         self.panel.add_child(self.rgb_label2d_widget)
         self.window.add_child(self.panel)
 
+    def _init_menu(self):
         # ---- Menu ----
         if gui.Application.instance.menubar is None:
             # file
@@ -405,9 +416,6 @@ class AppWindow:
         self.window.set_on_menu_item_activated(AppWindow.MENU_COORDINATE, self._on_menu_coordinate)
         self.window.set_on_menu_item_activated(AppWindow.MENU_VIEWPOINT, self._on_menu_viewpoint)
         self.window.set_on_menu_item_activated(AppWindow.MENU_SCREENSHOT, self._on_menu_screenshot)
-
-        self.is_done = False
-        threading.Thread(target=self._update_thread).start()
 
     def _on_layout(self, layout_context):
         r = self.window.content_rect
