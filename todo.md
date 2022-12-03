@@ -184,6 +184,9 @@ pip install -U pip -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirr
 - [x] draw 3d point cloud label
 - [x] [visualization with intensity](https://github.com/isl-org/Open3D/issues/2545#issuecomment-987119956)
 - [x] save screenshot sequences as gif
+- [x] multi 3d scene widgets
+- [x] [point cloud to mesh](http://www.open3d.org/docs/release/tutorial/geometry/surface_reconstruction.html)
+- [ ] [add collapsible widget](https://github.com/isl-org/Open3D/blob/4eef4b3061e1f76fd7d2669ac388d1d19ce3c53d/examples/python/visualization/non_english.py#L186)
 - [ ] point cloud with texture
 
 <!-- End of File -->

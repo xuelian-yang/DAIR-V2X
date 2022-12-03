@@ -3,16 +3,20 @@
 """
 References
 ----------
-    look_at(center, eye, up)
-        http://www.open3d.org/docs/release/python_api/open3d.visualization.rendering.Camera.html#open3d.visualization.rendering.Camera.look_at
-    Update geometry using open3d.visualization.rendering.Open3DScene
-        https://github.com/isl-org/Open3D/issues/2869#issuecomment-761942166
-    Open3D example - video.py
-        https://github.com/isl-org/Open3D/blob/master/examples/python/visualization/video.py
+    Create a collapsible vertical widget
+        https://github.com/isl-org/Open3D/blob/v0.16.0/examples/python/visualization/non_english.py#L186
     How to set min/max for colormap when rendering a pointcloud? #2545
         https://github.com/isl-org/Open3D/issues/2545#issuecomment-987119956
+    look_at(center, eye, up)
+        http://www.open3d.org/docs/release/python_api/open3d.visualization.rendering.Camera.html#open3d.visualization.rendering.Camera.look_at
     Multiple viewports per window
         https://github.com/isl-org/Open3D/issues/999#issuecomment-720839907
+    Open3D example - video.py
+        https://github.com/isl-org/Open3D/blob/master/examples/python/visualization/video.py
+    Surface reconstruction
+        http://www.open3d.org/docs/release/tutorial/geometry/surface_reconstruction.html
+    Update geometry using open3d.visualization.rendering.Open3DScene
+        https://github.com/isl-org/Open3D/issues/2869#issuecomment-761942166
 
 pip install pyscreenshot
 """
@@ -151,6 +155,7 @@ class PathConfig:
         image = o3d.t.io.read_image(self.image_paths[k])
         # point = o3d.io.read_point_cloud(self.point_paths[k])
         point = o3d.t.io.read_point_cloud(self.point_paths[k])
+        point_normal = o3d.io.read_point_cloud(self.point_paths[k])
         label2d = load_json(self.label2d_paths[k])
         label3d = load_json(self.label3d_paths[k])
         intr = load_json(self.intr_paths[k])
@@ -159,7 +164,7 @@ class PathConfig:
 
         if isinstance(point, o3d.t.geometry.PointCloud):
             point.point['__visualization_scalar'] = point.point.intensity
-        return image, point, label2d, label3d, intr, extr_v2c, extr_v2w
+        return image, point, label2d, label3d, intr, extr_v2c, extr_v2w, point_normal
 
     def read_frames(self):
         data = []
@@ -260,36 +265,53 @@ class AppWindow:
         self.rgb_label2d_images = []
         self.pcd = []
         self.pcd_label3d = []
+        self.mesh = []
 
         label2d_type_set = set()
         label3d_type_set = set()
 
         for framd_id, data_frame in enumerate(data.read_frames()):
-            image, point, label2d, label3d, intr, extr_v2c, extr_v2w = data_frame
+            image, point, label2d, label3d, intr, extr_v2c, extr_v2w, point_normal = data_frame
             self.rgb_images.append(image)
             self.pcd.append(point)
             self.rgb_label2d_images.append(draw_2d_image_label(image, label2d))
 
+            if framd_id < 3:
+                point_normal.estimate_normals()
+                radii = [0.2]
+                tri_mesh = o3d.geometry.TriangleMesh.create_from_point_cloud_ball_pivoting(point_normal, o3d.utility.DoubleVector(radii))
+                self.mesh.append(tri_mesh)
+
             if framd_id == 0: # debug
+                # mesh
+                # tri_mesh = o3d.geometry.TriangleMesh.create_from_point_cloud_alpha_shape(point_normal, 1.03)
+                point_normal.estimate_normals()
+                # tri_mesh, _ = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(point_normal, depth=9)
+                radii = [0.05, 0.1, 0.2, 0.4, 0.8, 1.6, 3.2, 6.4]
+                tri_mesh = o3d.geometry.TriangleMesh.create_from_point_cloud_ball_pivoting(point_normal, o3d.utility.DoubleVector(radii))
+
+                print(pcolor(f'vertices: {np.asarray(tri_mesh.vertices).shape}', 'yellow'))
+                print(pcolor(f'triangles: {np.asarray(tri_mesh.triangles).shape}', 'yellow'))
+
                 print(f'{type(label3d)} {len(label3d)} {type(label3d[0])}')
                 # pprint.pprint(label3d[0])
                 draw_3d_pointcloud_label(label3d)
 
                 if isinstance(point, o3d.geometry.PointCloud):
-                    print(pcolor(f'o3d.geometry.PointCloud:', 'yellow'))
+                    print(pcolor(f'o3d.geometry.PointCloud:', 'blue'))
                     print(pcolor(f'  has_points:      {point.has_points()}', 'yellow'))
                     print(pcolor(f'  has_normals:     {point.has_normals()}', 'yellow'))
                     print(pcolor(f'  has_colors:      {point.has_colors()}', 'yellow'))
                     print(pcolor(f'  has_covariances: {point.has_covariances()}', 'yellow'))
 
                 if isinstance(point, o3d.t.geometry.PointCloud):
-                    print(pcolor(f'o3d.t.geometry.PointCloud:', 'yellow'))
-                    print(pcolor(f'{type(point.point)} {point.point.primary_key} {str(point.point)}', 'yellow'))
-                    print(pcolor(f'  intensity: {np.amin(point.point.intensity.numpy())} {np.amax(point.point.intensity.numpy())} {np.mean(point.point.intensity.numpy())}', 'yellow'))
-                    print(pcolor(f'  device:  {point.device}', 'red'))
-                    print(pcolor(f'  is_cpu:  {point.is_cpu}', 'red'))
-                    print(pcolor(f'  is_cuda: {point.is_cuda}', 'red'))
-                    print(pcolor(f'  material: {point.material}', 'red'))
+                    print(pcolor(f'o3d.t.geometry.PointCloud:', 'blue'))
+                    print(pcolor(f'  > point.point {type(point.point)} {point.point.primary_key} {str(point.point)}', 'yellow'))
+                    print(pcolor(f'  > intensity: {np.amin(point.point.intensity.numpy())} {np.amax(point.point.intensity.numpy())} {np.mean(point.point.intensity.numpy())}', 'cyan'))
+                    print(pcolor(f'  - device:   {point.device}', 'magenta'))
+                    print(pcolor(f'  - is_cpu:   {point.is_cpu}', 'magenta'))
+                    print(pcolor(f'  - is_cuda:  {point.is_cuda}', 'magenta'))
+                    print(pcolor(f'  - material: {point.material}', 'magenta'))
 
             for item in label2d:
                 label2d_type_set.add(superclass[name2id[item["type"].lower()]])
@@ -300,7 +322,7 @@ class AppWindow:
         print(pcolor(f'> label2d_type_set: {label2d_type_set}', 'magenta'))
         print(pcolor(f'> label3d_type_set: {label3d_type_set}', 'magenta'))
         self.num = len(self.pcd)
-        print(pcolor(f'>> loading data of {self.num} frames elapsed {time.time() - g_time_beg:.3f} seconds', 'cyan'))
+        print(pcolor(f'>> loading data of {self.num} frames elapsed {time.time() - g_time_beg:.3f} seconds', 'red'))
 
         # 3D geometry
         self.coord = o3d.geometry.TriangleMesh.create_coordinate_frame(size=10, origin=[0, 0, 0])
@@ -361,6 +383,9 @@ class AppWindow:
 
         self.widget3d_bottom_right.scene.add_geometry('coord', self.coord, self.lit)
         self.widget3d_bottom_right.setup_camera(75, self.widget3d_bottom_right.scene.bounding_box, (0, 0, 0))
+        self.widget3d_bottom_right.scene.add_geometry('mesh', self.mesh[0], self.lit)
+        self.widget3d_bottom_right.setup_camera(75, self.widget3d_bottom_right.scene.bounding_box, (0, 0, 0))
+        self.widget3d_bottom_right.scene.camera.look_at([70,0,0], [-30,0,50], [100,0,50]) # look_at(center, eye, up)
 
         em = self.window.theme.font_size
         margin = 0.5 * em
@@ -421,16 +446,16 @@ class AppWindow:
         r = self.window.content_rect
         gap = 3
         panel_width = int(r.width * 0.35)
-        h_3d = r.height / 2 - gap
-        w_3d = (r.width - panel_width) / 2 - gap
+        h_3d = (r.height - 3*gap) / 2
+        w_3d = (r.width - 3*gap - panel_width) / 2
 
         # 3D
-        self.widget3d.frame = gui.Rect(r.x, r.y, w_3d, h_3d)
-        self.widget3d_top_right.frame = gui.Rect(self.widget3d.frame.get_right() + gap, r.y, w_3d, h_3d)
-        self.widget3d_bottom_left.frame = gui.Rect(r.x, self.widget3d.frame.get_bottom() + gap, w_3d, h_3d)
-        self.widget3d_bottom_right.frame = gui.Rect(self.widget3d.frame.get_right() + gap, self.widget3d.frame.get_bottom() + gap, w_3d, h_3d)
+        self.widget3d.frame              = gui.Rect(r.x+gap, r.y+gap, w_3d, h_3d)
+        self.widget3d_bottom_left.frame  = gui.Rect(r.x+gap, self.widget3d.frame.get_bottom()+gap, w_3d, h_3d)
+        self.widget3d_top_right.frame    = gui.Rect(self.widget3d.frame.get_right()+gap, r.y+gap, w_3d, h_3d)
+        self.widget3d_bottom_right.frame = gui.Rect(self.widget3d.frame.get_right()+gap, self.widget3d.frame.get_bottom()+gap, w_3d, h_3d)
         # 2D
-        self.panel.frame = gui.Rect(r.width - panel_width, r.y, panel_width, r.height)
+        self.panel.frame                 = gui.Rect(r.width - panel_width, r.y, panel_width, r.height)
 
     def _on_close(self):
         self.is_done = True
@@ -521,6 +546,8 @@ class AppWindow:
                 self.widget3d_bottom_left.scene.add_geometry('coord', self.coord, self.lit)
                 self.widget3d_bottom_right.scene.clear_geometry()
                 self.widget3d_bottom_right.scene.add_geometry('coord', self.coord, self.lit)
+                self.widget3d_bottom_right.scene.add_geometry('mesh', self.mesh[0], self.lit)
+                # self.widget3d_bottom_right.setup_camera(75, self.widget3d_bottom_right.scene.bounding_box, (0, 0, 0))
 
             if not self.is_done:
                 gui.Application.instance.post_to_main_thread(self.window, update)
