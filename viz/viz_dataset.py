@@ -5,6 +5,8 @@ References
 ----------
     Create a collapsible vertical widget
         https://github.com/isl-org/Open3D/blob/v0.16.0/examples/python/visualization/non_english.py#L186
+    Docs » open3d.visualization » open3d.visualization.gui
+        Docs » open3d.visualization » open3d.visualization.gui
     How to set min/max for colormap when rendering a pointcloud? #2545
         https://github.com/isl-org/Open3D/issues/2545#issuecomment-987119956
     look_at(center, eye, up)
@@ -113,9 +115,9 @@ superclass = {
 }
 
 color_superclass = {
-    0: (255, 0, 0),
+    0: (0, 0, 255),
     1: (0, 255, 0),
-    2: (0, 0, 255),
+    2: (255, 0, 0),
     3: (0, 255, 255),
 }
 
@@ -155,8 +157,8 @@ class PathConfig:
         image = o3d.t.io.read_image(self.image_paths[k])
         # point = o3d.io.read_point_cloud(self.point_paths[k])
         point = o3d.t.io.read_point_cloud(self.point_paths[k])
-        # point.point['colors'] = o3d.utility.Vector3dVector(np.random.uniform(0, 1, size=(point.point.positions.numpy().shape)))
-        point.point.colors = o3d.core.Tensor.zeros(point.point.positions.shape, point.point.positions.dtype, point.point.positions.device)
+        # point.point.colors = o3d.core.Tensor.zeros(point.point.positions.shape, point.point.positions.dtype, point.point.positions.device)
+        point.point.colors = o3d.core.Tensor.full(point.point.positions.shape, 0.3, point.point.positions.dtype, point.point.positions.device)
 
         '''
         # http://www.open3d.org/docs/release/python_api/open3d.t.geometry.PointCloud.html#open3d-t-geometry-pointcloud
@@ -256,6 +258,60 @@ def draw_3d_pointcloud_label(label3d):
     return line_set_col
 
 
+def calc_point_color(cloud, image, intr, extr_v2c):
+    # 1. get point cloud in camera coordinate
+    np_cloud = cloud.point.positions.numpy()
+    if "Tr_velo_to_cam" in extr_v2c.keys():
+        velo2cam = np.array(extr_v2c["Tr_velo_to_cam"]).reshape(3, 4)
+        r_v2c = velo2cam[:, :3]
+        t_v2c = velo2cam[:, 3].reshape(3, 1)
+    else:
+        r_v2c = np.array(extr_v2c["rotation"])
+        t_v2c = np.array(extr_v2c["translation"])
+    new_cloud = r_v2c * np.matrix(np_cloud).T + t_v2c # point cloud in camera coordinate
+
+    # 2. project point cloud to image coordinate
+    intr_mat = np.zeros([3, 4])
+    intr_mat[:3, :3] = np.array(intr['cam_K']).reshape([3, 3], order="C")
+    new_cloud = np.array(new_cloud.T)
+    points_num = list(new_cloud.shape)[:-1]
+    points_shape = np.concatenate([points_num, [1]], axis=0)
+    points_2d_shape = np.concatenate([points_num, [3]], axis=0)
+    points_4 = np.concatenate((new_cloud, np.ones(points_shape)), axis=-1)
+    point_2d = np.matmul(intr_mat, points_4.T)
+    point_2d = point_2d.T.reshape(points_2d_shape)
+    point_2d_res = point_2d[..., :2] / point_2d[..., 2:3]
+    # uv_origin = (point_2d_res - 1).round()
+    uv_origin = point_2d_res.astype(np.int32)
+    np_image = image.as_tensor().numpy()
+    h, w, _ = np_image.shape
+    v_in = np.where((uv_origin[:, 0] >= 0) & (uv_origin[:, 0] < w) &
+                    (uv_origin[:, 1] >= 0) & (uv_origin[:, 1] < h), True, False)
+    cloud.point.colors = o3d.core.Tensor.zeros(cloud.point.positions.shape, cloud.point.positions.dtype, cloud.point.positions.device)
+    # return cloud
+
+    print(pcolor(f'calc_point_cloud( \n'
+                 f'  cloud={type(np_cloud)} {np_cloud.dtype} {np_cloud.shape}, \n'
+                 f'  image={type(np_image)} {np_image.dtype} {np_image.shape}, \n)', 'red'))
+    # pprint.pprint(f'intr:\n{intr}\n')
+    # pprint.pprint(f'extr_v2c:\n{extr_v2c}\n')
+    print(pcolor(f'  new_cloud={type(new_cloud)} {new_cloud.dtype} {new_cloud.shape}', 'red'))
+    print(pcolor(f'  points_4 ={type(points_4)} {points_4.dtype} {points_4.shape}', 'yellow'))
+    print(pcolor(f'  point_2d_res: {type(point_2d_res)} {point_2d_res.dtype} {point_2d_res.shape}', 'blue'))
+    print(pcolor(f'  intr_mat=\n{intr_mat}', 'red'))
+    tensor_colors = o3d.core.Tensor.zeros(cloud.point.positions.shape, cloud.point.positions.dtype, cloud.point.positions.device)
+    print(f'==> {np.amin(np_image)} {np.amax(np_image)}')
+
+    tensor_colors[v_in] = np.array([0.9, 0.2, 0.3])
+    print(f'v_in: {type(v_in)} {v_in.shape} {v_in.dtype}')
+    print(f'uv_origin: {type(uv_origin)} {uv_origin.shape} {uv_origin.dtype}')
+    cloud.point.colors[v_in] = np.array([0.9, 0.2, 0.3])
+    new_img = np_image * 1.0 / 255.0
+    valid_uv_origin = uv_origin[v_in]
+    cloud.point.colors[v_in] = new_img[valid_uv_origin[:, 1], valid_uv_origin[:, 0], :]
+
+    return cloud
+
 class AppWindow:
     MENU_OPEN = 1
     MENU_EXPORT = 2
@@ -299,9 +355,12 @@ class AppWindow:
         for framd_id, data_frame in enumerate(data.read_frames()):
             image, point, label2d, label3d, intr, extr_v2c, extr_v2w, point_normal = data_frame
             self.rgb_images.append(image)
+            # self.pcd.append(point)
+            point = calc_point_color(point, image, intr, extr_v2c)
             self.pcd.append(point)
             self.rgb_label2d_images.append(draw_2d_image_label(image, label2d))
 
+            # point cloud to mesh
             if framd_id < 3:
                 point_normal.estimate_normals()
                 radii = [0.2]
@@ -345,6 +404,10 @@ class AppWindow:
                     print(pcolor(f'  - is_cpu:   {point.is_cpu}', 'magenta'))
                     print(pcolor(f'  - is_cuda:  {point.is_cuda}', 'magenta'))
                     print(pcolor(f'  - material: {point.material}', 'magenta'))
+
+                # fusion point cloud with image
+                point = calc_point_color(point, image, intr, extr_v2c)
+                self.pcd[0] = point
 
             for item in label2d:
                 label2d_type_set.add(superclass[name2id[item["type"].lower()]])
@@ -581,6 +644,7 @@ class AppWindow:
             rgb_frame = self.rgb_images[idx]
             rgb_label2d_frame = self.rgb_label2d_images[idx]
             pcd = self.pcd[idx]
+            # pcd = self.pcd[0] # debug
             pcd_label = self.pcd_label3d[idx]
 
             if self.config_animation:
