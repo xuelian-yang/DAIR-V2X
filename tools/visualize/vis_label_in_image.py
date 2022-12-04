@@ -19,6 +19,7 @@ def vis_label_in_image(path, save_path):
 
     # get data_info
     path_data_infos = read_json(osp.join(path, "data_info.json"))
+    # print(pcolor(f'  I> load {osp.join(path, "data_info.json")}', 'yellow'))
     for data_info in path_data_infos:
         # Get the path of the image to be visualized.
         image_path = osp.join(path, data_info["image_path"])
@@ -35,6 +36,7 @@ def vis_label_in_image(path, save_path):
 
         labels = []
         oris = read_json(label_path)
+        # print(pcolor(f'  I> load {label_path}', 'yellow'))
         for ori in oris:
             if "rotation" not in ori.keys():
                 ori["rotation"] = 0.0
@@ -51,6 +53,7 @@ def vis_label_in_image(path, save_path):
             continue
 
         vis_label_in_img(camera_8_points_list, image_path, cam_instrinsic_path, save_path)
+        # break
 
 
 def add_arguments(parser):
@@ -64,6 +67,10 @@ def add_arguments(parser):
 
 
 if __name__ == "__main__":
+    """
+    python tools/visualize/vis_label_in_image.py --path D:/0-DAIR-V2X-Dataset/DAIR-V2X-C-Example/cooperative-vehicle-infrastructure-example/infrastructure-side --output-file D:/1-DAIR-V2X-Output --id 0
+
+    """
     setup_log('tools_visualize_vis_label_in_image.log')
     time_beg_vis_image = time.time()
 

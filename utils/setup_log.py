@@ -38,7 +38,7 @@ class DuplicateFilter(object):
             self.msgs.add(record.msg)
             self.msgs_times[record.msg] = 1
         else:
-            if self.msgs_times[record.msg] < 1:
+            if self.msgs_times[record.msg] < 3:
                 self.msgs_times[record.msg] += 1
                 rv = True
             else:

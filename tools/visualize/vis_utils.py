@@ -10,7 +10,7 @@ import sys
 import os.path as osp
 
 sys.path.append(osp.join(osp.dirname(osp.abspath(__file__)), '../../'))
-from utils.setup_log import trace_logger
+from utils.setup_log import trace_logger, pcolor
 
 
 def mkdir_p(path):
@@ -72,6 +72,7 @@ def get_lidar2cam(calib):
 def get_cam_calib_intrinsic(calib_path):
     trace_logger.warning(f'get_cam_calib_intrinsic( {calib_path} )')
     my_json = read_json(calib_path)
+    # print(pcolor(f'  I> load {calib_path}', 'yellow'))
     cam_K = my_json["cam_K"]
     calib = np.zeros([3, 4])
     calib[:3, :3] = np.array(cam_K).reshape([3, 3], order="C")
@@ -211,6 +212,7 @@ def get_cam_8_points(labels, calib_lidar2cam_path):
     """
     trace_logger.warning(f'get_cam_8_points( .. )')
     calib_lidar2cam = read_json(calib_lidar2cam_path)
+    # print(pcolor(f'  I> load {calib_lidar2cam_path}', 'yellow'))
     r_velo2cam, t_velo2cam = get_lidar2cam(calib_lidar2cam)
     camera_8_points_list = []
     for label in labels:

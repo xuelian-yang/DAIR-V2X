@@ -155,6 +155,32 @@ class PathConfig:
         image = o3d.t.io.read_image(self.image_paths[k])
         # point = o3d.io.read_point_cloud(self.point_paths[k])
         point = o3d.t.io.read_point_cloud(self.point_paths[k])
+        # point.point['colors'] = o3d.utility.Vector3dVector(np.random.uniform(0, 1, size=(point.point.positions.numpy().shape)))
+        point.point.colors = o3d.core.Tensor.zeros(point.point.positions.shape, point.point.positions.dtype, point.point.positions.device)
+
+        '''
+        # http://www.open3d.org/docs/release/python_api/open3d.t.geometry.PointCloud.html#open3d-t-geometry-pointcloud
+        device = o3d.core.Device("CPU:0")
+        dtype = o3d.core.float32
+        pcd = o3d.t.geometry.PointCloud(device)
+        pcd.point.positions = o3d.core.Tensor([[0, 0, 0],
+                                                [1, 1, 1],
+                                                [2, 2, 2]], dtype, device)
+        pcd.point.positions = o3d.core.Tensor([[0, 0, 0],
+                                                [1, 1, 1],
+                                                [2, 2, 2]], dtype, device)
+        pcd.point.positions = o3d.core.Tensor([[0, 0, 0],
+                                                [1, 1, 1],
+                                                [2, 2, 2]], dtype, device)
+        pcd.point.intensities = o3d.core.Tensor([0.3, 0.1, 0.4], dtype, device)
+        pcd.point.labels = o3d.core.Tensor([3, 1, 4], o3d.core.int32, device)
+        new_pcd = o3d.t.geometry.PointCloud(device)
+        new_pcd.point.positions = point.point.positions
+        new_pcd.point.intensity = point.point.intensity
+        new_pcd.point.colors = o3d.core.Tensor.zeros(point.point.positions.shape, dtype, device)
+        point = new_pcd
+        '''
+
         point_normal = o3d.io.read_point_cloud(self.point_paths[k])
         label2d = load_json(self.label2d_paths[k])
         label3d = load_json(self.label3d_paths[k])
@@ -290,10 +316,17 @@ class AppWindow:
                 radii = [0.05, 0.1, 0.2, 0.4, 0.8, 1.6, 3.2, 6.4]
                 tri_mesh = o3d.geometry.TriangleMesh.create_from_point_cloud_ball_pivoting(point_normal, o3d.utility.DoubleVector(radii))
 
-                print(pcolor(f'vertices: {np.asarray(tri_mesh.vertices).shape}', 'yellow'))
-                print(pcolor(f'triangles: {np.asarray(tri_mesh.triangles).shape}', 'yellow'))
+                print(pcolor(f'  I> vertices:  {np.asarray(tri_mesh.vertices).shape}', 'yellow'))
+                print(pcolor(f'  I> triangles: {np.asarray(tri_mesh.triangles).shape}', 'yellow'))
 
-                print(f'{type(label3d)} {len(label3d)} {type(label3d[0])}')
+                print(pcolor(f'\n=== intr === {type(intr)}', 'yellow'))
+                pprint.pprint(intr)
+                print(pcolor(f'\n=== extr_v2c === {type(extr_v2c)}', 'yellow'))
+                pprint.pprint(extr_v2c)
+                print(pcolor(f'\n=== extr_v2w === {type(extr_v2w)}', 'yellow'))
+                pprint.pprint(extr_v2w)
+
+                print(pcolor(f'{type(label3d)} {len(label3d)} {type(label3d[0])}', 'magenta'))
                 # pprint.pprint(label3d[0])
                 draw_3d_pointcloud_label(label3d)
 
