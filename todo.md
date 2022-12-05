@@ -186,7 +186,9 @@ pip install -U pip -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirr
 - [x] save screenshot sequences as gif
 - [x] multi 3d scene widgets
 - [x] [point cloud to mesh](http://www.open3d.org/docs/release/tutorial/geometry/surface_reconstruction.html)
-- [ ] [add collapsible widget](https://github.com/isl-org/Open3D/blob/4eef4b3061e1f76fd7d2669ac388d1d19ce3c53d/examples/python/visualization/non_english.py#L186)
-- [ ] point cloud with texture
+- [x] [add collapsible widget](https://github.com/isl-org/Open3D/blob/4eef4b3061e1f76fd7d2669ac388d1d19ce3c53d/examples/python/visualization/non_english.py#L186)
+- [x] point cloud with texture
+- [ ] mesh with texture
+- [ ] offline processing (cloud to mesh, compute texture, progress bar)
 
 <!-- End of File -->

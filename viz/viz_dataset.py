@@ -26,6 +26,7 @@ pip install pyscreenshot
 import copy
 import cv2
 import datetime
+import glob
 import importlib.util
 import json
 import logging
@@ -722,7 +723,7 @@ def main():
 
     app.run()
 
-def analysis_pcd():
+def debug_analysis_pcd():
     """
     git clone --recursive git@github.com:klintan/pypcd.git
     cd pypcd
@@ -744,6 +745,19 @@ def analysis_pcd():
     print(pcolor(f'veh_pcd: {type(veh_pcd)} {type(veh_pcd.pc_data)} {veh_pcd.pc_data.shape} {veh_pcd.fields}', 'blue'))
 
 
+def debug_create_gif():
+    path = '/mnt/datax/temp/demo-v1'
+    save_fig = f'{path}/DAIR-V2X.gif'
+
+    frames = []
+    files = sorted(glob.glob(f'{path}/*.png'))
+    for item in files:
+        new_frame = PIL.Image.open(item)
+        frames.append(new_frame)
+    print(pcolor(f'writing {save_fig}', 'red'))
+    frames[0].save(save_fig, format='GIF', append_images=frames[1:], save_all=True, duration=200, loop=0, comment=b'DAIR V2X Visualization')
+
+
 if __name__ == "__main__":
     print(pcolor(f'sys.version:        {sys.version}', 'yellow'))
     print(pcolor(f'cv2.__version__:    {cv2.__version__}', 'yellow'))
@@ -753,4 +767,5 @@ if __name__ == "__main__":
 
     setup_log()
     main()
-    # analysis_pcd()
+    # debug_analysis_pcd()
+    # debug_create_gif()
