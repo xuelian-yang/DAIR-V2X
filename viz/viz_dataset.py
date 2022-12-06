@@ -5,8 +5,14 @@ References
 ----------
     Create a collapsible vertical widget
         https://github.com/isl-org/Open3D/blob/v0.16.0/examples/python/visualization/non_english.py#L186
+    Docs » Build from source » ML Module
+        http://www.open3d.org/docs/release/compilation.html#ml-module
+    Docs » open3d.t » open3d.t.geometry » open3d.t.geometry.PointCloud
+        http://www.open3d.org/docs/release/python_api/open3d.t.geometry.PointCloud.html#open3d-t-geometry-pointcloud
     Docs » open3d.visualization » open3d.visualization.gui
-        Docs » open3d.visualization » open3d.visualization.gui
+        http://www.open3d.org/docs/release/python_api/open3d.visualization.gui.html
+    How to identify which OS Python is running on?
+        https://stackoverflow.com/questions/1854/how-to-identify-which-os-python-is-running-on/1857#1857
     How to set min/max for colormap when rendering a pointcloud? #2545
         https://github.com/isl-org/Open3D/issues/2545#issuecomment-987119956
     look_at(center, eye, up)
@@ -48,42 +54,21 @@ try:
     import open3d.visualization.gui as gui
     import open3d.visualization.rendering as rendering
 except ImportError:
-    raise ImportError(
-        'Please run "pip install open3d" to install open3d first.')
+    raise ImportError('Please run "pip install open3d" to install open3d first.')
 
 has_ml3d = importlib.util.find_spec('open3d._ml3d')
 if has_ml3d:
-    print(colored(f'>>> has _ml3d <<<', 'red'))
+    print(colored(f'>>> has _ml3d <<<', 'blue'))
     from open3d.ml.vis import Colormap
 else:
     print(colored(f'>>> no _ml3d <<<', 'red'))
 
-"""
-Open3D-ML
-  http://www.open3d.org/docs/release/compilation.html
 
-mkdir build
-cd build
-
-cmake -DBUILD_CUDA_MODULE=ON \
-      -DGLIBCXX_USE_CXX11_ABI=OFF \
-      -DBUILD_PYTORCH_OPS=ON \
-      -DBUILD_TENSORFLOW_OPS=ON \
-      -DBUNDLE_OPEN3D_ML=ON \
-      -DPython3_ROOT=/home/sigma/anaconda3/envs/o3d-ml/bin/python \
-      -DOPEN3D_ML_ROOT=/mnt/datax/github-install/Open3D-ML \
-      ..
-
-# Install the python wheel with pip
-make -j install-pip-package
-"""
-
-logger = logging.getLogger(__name__)
-# https://stackoverflow.com/a/1857
-isLinux = (platform.system() == "Linux")
-isMacOS = (platform.system() == "Darwin")
+isLinux   = (platform.system() == "Linux")
+isMacOS   = (platform.system() == "Darwin")
 isWindows = (platform.system() == "Windows")
 
+logger = logging.getLogger(__name__)
 g_time_beg = time.time()
 
 name2id = {
@@ -128,7 +113,7 @@ def pcolor(string, color, on_color=None, attrs=None):
 
 
 def setup_log():
-    medium_format_new = (
+    medium_format = (
         '[%(asctime)s] %(levelname)s : %(filename)s[%(lineno)d] %(funcName)s'
         ' >>> %(message)s'
     )
@@ -140,32 +125,32 @@ def setup_log():
         filename=get_log_file,
         filemode='w',
         level=logging.INFO,
-        format=medium_format_new
+        format=medium_format
     )
     logging.info('@{} created at {}'.format(get_log_file, dt_now))
-    print('@{} created at {}'.format(get_log_file, dt_now))
+    print(pcolor('@{} created at {}'.format(get_log_file, dt_now), 'magenta'))
 
 
 class PathConfig:
     def __init__(self, path_cfg):
-        self.image_paths = path_cfg['image_paths']
-        self.point_paths = path_cfg['point_paths']
-        self.intr_paths = path_cfg['intr_paths']
+        self.image_paths    = path_cfg['image_paths']
+        self.point_paths    = path_cfg['point_paths']
+        self.intr_paths     = path_cfg['intr_paths']
         self.extr_v2c_paths = path_cfg['extr_v2c_paths']
         self.extr_v2w_paths = path_cfg['extr_v2w_paths']
-        self.label2d_paths = path_cfg['label2d_paths']
-        self.label3d_paths = path_cfg['label3d_paths']
+        self.label2d_paths  = path_cfg['label2d_paths']
+        self.label3d_paths  = path_cfg['label3d_paths']
 
         self.num = len(self.image_paths)
-        assert len(self.point_paths) == self.num \
-            and len(self.intr_paths) == self.num \
+        assert len(self.point_paths)     == self.num \
+            and len(self.intr_paths)     == self.num \
             and len(self.extr_v2c_paths) == self.num \
             and len(self.extr_v2w_paths) == self.num \
-            and len(self.label2d_paths) == self.num \
-            and len(self.label3d_paths) == self.num
+            and len(self.label2d_paths)  == self.num \
+            and len(self.label3d_paths)  == self.num, 'Unmatched data pairs'
 
     def read_frame(self, k):
-        assert 0 <= k < self.num
+        assert 0 <= k < self.num, f'index {k} is out of range [0, {self.num})'
 
         def load_json(path, debug=False):
             with open(path, mode="r") as f:
@@ -174,52 +159,32 @@ class PathConfig:
                 logging.info(f'load_json({path})')
             return data
 
+        # o3d.geometry vs o3d.t.geometry
         # image = o3d.io.read_image(self.image_paths[k]) 
-        image = o3d.t.io.read_image(self.image_paths[k])
         # point = o3d.io.read_point_cloud(self.point_paths[k])
+        image = o3d.t.io.read_image(self.image_paths[k])
         point = o3d.t.io.read_point_cloud(self.point_paths[k])
-        # point.point.colors = o3d.core.Tensor.zeros(point.point.positions.shape, point.point.positions.dtype, point.point.positions.device)
+
+        # o3d.core.Tensor [arange, diag, empty, eye, from_dlpack, from_numpy,  full, load, ones, zeros]
         point.point.colors = o3d.core.Tensor.full(point.point.positions.shape, 0.3, point.point.positions.dtype, point.point.positions.device)
 
-        '''
-        # http://www.open3d.org/docs/release/python_api/open3d.t.geometry.PointCloud.html#open3d-t-geometry-pointcloud
-        device = o3d.core.Device("CPU:0")
-        dtype = o3d.core.float32
-        pcd = o3d.t.geometry.PointCloud(device)
-        pcd.point.positions = o3d.core.Tensor([[0, 0, 0],
-                                                [1, 1, 1],
-                                                [2, 2, 2]], dtype, device)
-        pcd.point.positions = o3d.core.Tensor([[0, 0, 0],
-                                                [1, 1, 1],
-                                                [2, 2, 2]], dtype, device)
-        pcd.point.positions = o3d.core.Tensor([[0, 0, 0],
-                                                [1, 1, 1],
-                                                [2, 2, 2]], dtype, device)
-        pcd.point.intensities = o3d.core.Tensor([0.3, 0.1, 0.4], dtype, device)
-        pcd.point.labels = o3d.core.Tensor([3, 1, 4], o3d.core.int32, device)
-        new_pcd = o3d.t.geometry.PointCloud(device)
-        new_pcd.point.positions = point.point.positions
-        new_pcd.point.intensity = point.point.intensity
-        new_pcd.point.colors = o3d.core.Tensor.zeros(point.point.positions.shape, dtype, device)
-        point = new_pcd
-        '''
-
+        # todo: remove point_normal and reuse point
         point_normal = o3d.io.read_point_cloud(self.point_paths[k])
-        label2d = load_json(self.label2d_paths[k])
-        label3d = load_json(self.label3d_paths[k])
-        intr = load_json(self.intr_paths[k])
-        extr_v2c = load_json(self.extr_v2c_paths[k])
-        extr_v2w = load_json(self.extr_v2w_paths[k])
+        label2d      = load_json(self.label2d_paths[k])
+        label3d      = load_json(self.label3d_paths[k])
+        intr         = load_json(self.intr_paths[k])
+        extr_v2c     = load_json(self.extr_v2c_paths[k])
+        extr_v2w     = load_json(self.extr_v2w_paths[k])
 
         if isinstance(point, o3d.t.geometry.PointCloud):
             point.point['__visualization_scalar'] = point.point.intensity
         return image, point, label2d, label3d, intr, extr_v2c, extr_v2w, point_normal
 
     def read_frames(self):
-        data = []
+        frames = []
         for i in range(self.num):
-            data.append(self.read_frame(i))
-        return data
+            frames.append(self.read_frame(i))
+        return frames
 
 
 def get_path():
@@ -228,13 +193,13 @@ def get_path():
     else:
         str_root = 'D:/0-DAIR-V2X-Dataset/DAIR-V2X-C-Example/cooperative-vehicle-infrastructure-example/infrastructure-side'
     dict_name = {
-        'image_paths': 'image',                           # jpg
-        'point_paths': 'velodyne',                        # pcd
-        'intr_paths': 'calib/camera_intrinsic',           # json
+        'image_paths':    'image',                        # jpg
+        'point_paths':    'velodyne',                     # pcd
+        'intr_paths':     'calib/camera_intrinsic',       # json
         'extr_v2c_paths': 'calib/virtuallidar_to_camera', # json
         'extr_v2w_paths': 'calib/virtuallidar_to_world',  # json
-        'label2d_paths': 'label/camera',                  # json
-        'label3d_paths': 'label/virtuallidar'             # json
+        'label2d_paths':  'label/camera',                 # json
+        'label3d_paths':  'label/virtuallidar'            # json
         }
     path_cfg = {}
     for k, v in dict_name.items():
@@ -271,8 +236,8 @@ def draw_3d_pointcloud_label(label3d):
         ]
         yaw = np.zeros(3)
         yaw[2] = yaw_lidar
-        rot_mat = o3d.geometry.get_rotation_matrix_from_xyz(yaw)
-        box3d = o3d.geometry.OrientedBoundingBox(center_lidar, rot_mat, obj_size)
+        rot_mat  = o3d.geometry.get_rotation_matrix_from_xyz(yaw)
+        box3d    = o3d.geometry.OrientedBoundingBox(center_lidar, rot_mat, obj_size)
         line_set = o3d.geometry.LineSet.create_from_oriented_bounding_box(box3d)
         line_set.paint_uniform_color((1, 0, 0))
         line_set_col.append(line_set)
@@ -294,9 +259,9 @@ def calc_point_color(cloud, image, intr, extr_v2c):
     # 2. project point cloud to image coordinate
     intr_mat = np.zeros([3, 4])
     intr_mat[:3, :3] = np.array(intr['cam_K']).reshape([3, 3], order="C")
-    new_cloud = np.array(new_cloud.T)
-    points_num = list(new_cloud.shape)[:-1]
-    points_shape = np.concatenate([points_num, [1]], axis=0)
+    new_cloud       = np.array(new_cloud.T)
+    points_num      = list(new_cloud.shape)[:-1]
+    points_shape    = np.concatenate([points_num, [1]], axis=0)
     points_2d_shape = np.concatenate([points_num, [3]], axis=0)
     points_4 = np.concatenate((new_cloud, np.ones(points_shape)), axis=-1)
     point_2d = np.matmul(intr_mat, points_4.T)
@@ -305,16 +270,17 @@ def calc_point_color(cloud, image, intr, extr_v2c):
     # uv_origin = (point_2d_res - 1).round()
     uv_origin = point_2d_res.astype(np.int32)
 
+    # 3. rgb pixel to point color
     np_image = image.as_tensor().numpy()
     new_img = np_image * 1.0 / 255.0
     h, w, _ = np_image.shape
     v_in = np.where((uv_origin[:, 0] >= 0) & (uv_origin[:, 0] < w) &
                     (uv_origin[:, 1] >= 0) & (uv_origin[:, 1] < h), True, False)
 
-    cloud.point.colors = o3d.core.Tensor.zeros(cloud.point.positions.shape, cloud.point.positions.dtype, cloud.point.positions.device)
-    tensor_colors = o3d.core.Tensor.zeros(cloud.point.positions.shape, cloud.point.positions.dtype, cloud.point.positions.device)
-    tensor_colors[v_in] = np.array([0.9, 0.2, 0.3])
-    cloud.point.colors[v_in] = np.array([0.9, 0.2, 0.3])
+    cloud.point.colors  = o3d.core.Tensor.zeros(cloud.point.positions.shape, cloud.point.positions.dtype, cloud.point.positions.device)
+    # tensor_colors       = o3d.core.Tensor.zeros(cloud.point.positions.shape, cloud.point.positions.dtype, cloud.point.positions.device)
+    # tensor_colors[v_in] = np.array([0.9, 0.2, 0.3])
+    # cloud.point.colors[v_in] = np.array([0.9, 0.2, 0.3])
 
     valid_uv_origin = uv_origin[v_in]
     cloud.point.colors[v_in] = new_img[valid_uv_origin[:, 1], valid_uv_origin[:, 0], :]
@@ -335,22 +301,26 @@ def calc_point_color(cloud, image, intr, extr_v2c):
     return cloud
 
 class AppWindow:
-    MENU_OPEN = 1
-    MENU_EXPORT = 2
-    MENU_QUIT = 3
-    MENU_SHOW_SETTINGS = 11
-    MENU_ABOUT = 21
-    MENU_ANIMATION = 31
-    MENU_COORDINATE = 32
-    MENU_VIEWPOINT = 33
-    MENU_SCREENSHOT = 34
+    MENU_OPEN          = 11
+    MENU_EXPORT        = 12
+    MENU_QUIT          = 13
+    MENU_SHOW_SETTINGS = 21
+    MENU_ABOUT         = 31
+    MENU_ANIMATION     = 41
+    MENU_POINTCLOUD    = 42
+    MENU_COORDINATE    = 43
+    MENU_LABEL3D       = 44
+    MENU_VIEWPOINT     = 45
+    MENU_SCREENSHOT    = 46
 
     def __init__(self, data):
         global g_time_beg
 
         # config variables
-        self.config_animation = True
-        self.config_coordinate = True
+        self.config_animation  = False
+        self.config_pointcloud = True
+        self.config_coordinate = False
+        self.config_label3d    = False
         self.config_screenshot = False
 
         # Screenshots to GIF
@@ -365,22 +335,25 @@ class AppWindow:
 
     def _init_data(self, data):
         # data for visualization
-        self.rgb_images = []
-        self.rgb_label2d_images = []
-        self.pcd = []
-        self.pcd_label3d = []
-        self.mesh = []
+        self.coord          = o3d.geometry.TriangleMesh.create_coordinate_frame(size=10, origin=[0, 0, 0])
+        self.images_raw     = []
+        self.images_label2d = []
+        self.pcds_raw       = []
+        self.pcds_label3d   = []
+        self.mesh           = []
 
         label2d_type_set = set()
         label3d_type_set = set()
 
         for framd_id, data_frame in enumerate(data.read_frames()):
             image, point, label2d, label3d, intr, extr_v2c, extr_v2w, point_normal = data_frame
-            self.rgb_images.append(image)
-            # self.pcd.append(point)
+            self.images_raw.append(image)
+            self.images_label2d.append(draw_2d_image_label(image, label2d))
+
+            # self.pcds_raw.append(point)
             point = calc_point_color(point, image, intr, extr_v2c)
-            self.pcd.append(point)
-            self.rgb_label2d_images.append(draw_2d_image_label(image, label2d))
+            self.pcds_raw.append(point)
+            self.pcds_label3d.append(draw_3d_pointcloud_label(label3d))
 
             # point cloud to mesh
             if framd_id < 3:
@@ -389,61 +362,52 @@ class AppWindow:
                 tri_mesh = o3d.geometry.TriangleMesh.create_from_point_cloud_ball_pivoting(point_normal, o3d.utility.DoubleVector(radii))
                 self.mesh.append(tri_mesh)
 
-            if framd_id == 0: # debug
-                # mesh
+            # === Debug ===
+            if framd_id == 0:
+                logger.info(f'\n=== intr ===     {type(intr)}\n{intr}')
+                logger.info(f'\n=== extr_v2c === {type(extr_v2c)}\n{extr_v2c}')
+                logger.info(f'\n=== extr_v2w === {type(extr_v2w)}\n{extr_v2w}')
+                logger.info(f'\n=== label2d ===  {type(label2d)} {len(label2d)} {type(label2d[0])}\n{label2d[0]}')
+                logger.info(f'\n=== label3d ===  {type(label3d)} {len(label3d)} {type(label3d[0])}\n{label3d[0]}')
+
+                if isinstance(point, o3d.geometry.PointCloud):
+                    logger.info(f'o3d.geometry.PointCloud:')
+                    logger.info(f'  > has_points:      {point.has_points()}')
+                    logger.info(f'  > has_normals:     {point.has_normals()}')
+                    logger.info(f'  > has_colors:      {point.has_colors()}')
+                    logger.info(f'  > has_covariances: {point.has_covariances()}')
+
+                if isinstance(point, o3d.t.geometry.PointCloud):
+                    logger.info(f'o3d.t.geometry.PointCloud:')
+                    logger.info(f'  > point.point {type(point.point)} {point.point.primary_key} {str(point.point)}')
+                    logger.info(f'  > intensity:  {np.amin(point.point.intensity.numpy())} {np.amax(point.point.intensity.numpy())} {np.mean(point.point.intensity.numpy())}')
+                    logger.info(f'  - device:     {point.device}')
+                    logger.info(f'  - is_cpu:     {point.is_cpu}')
+                    logger.info(f'  - is_cuda:    {point.is_cuda}')
+                    logger.info(f'  - material:   {point.material}')
+
+                # === mesh ===
                 # tri_mesh = o3d.geometry.TriangleMesh.create_from_point_cloud_alpha_shape(point_normal, 1.03)
                 point_normal.estimate_normals()
                 # tri_mesh, _ = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(point_normal, depth=9)
-                radii = [0.05, 0.1, 0.2, 0.4, 0.8, 1.6, 3.2, 6.4]
+                radii = [0.1, 0.2, 0.4, 0.8, 1.6, 3.2]
                 tri_mesh = o3d.geometry.TriangleMesh.create_from_point_cloud_ball_pivoting(point_normal, o3d.utility.DoubleVector(radii))
 
                 logger.info(f'  I> vertices:  {np.asarray(tri_mesh.vertices).shape}')
                 logger.info(f'  I> triangles: {np.asarray(tri_mesh.triangles).shape}')
 
-                logger.info(f'\n=== intr === {type(intr)}\n{intr}')
-                logger.info(f'\n=== extr_v2c === {type(extr_v2c)}\n{extr_v2c}')
-                logger.info(f'\n=== extr_v2w === {type(extr_v2w)}\n{extr_v2w}')
-                logger.info(f'{type(label3d)} {len(label3d)} {type(label3d[0])}\n{label3d[0]}')
-                draw_3d_pointcloud_label(label3d)
-
-                if isinstance(point, o3d.geometry.PointCloud):
-                    logger.info(f'o3d.geometry.PointCloud:')
-                    logger.info(f'  has_points:      {point.has_points()}')
-                    logger.info(f'  has_normals:     {point.has_normals()}')
-                    logger.info(f'  has_colors:      {point.has_colors()}')
-                    logger.info(f'  has_covariances: {point.has_covariances()}')
-
-                if isinstance(point, o3d.t.geometry.PointCloud):
-                    logger.info(f'o3d.t.geometry.PointCloud:')
-                    logger.info(f'  > point.point {type(point.point)} {point.point.primary_key} {str(point.point)}')
-                    logger.info(f'  > intensity: {np.amin(point.point.intensity.numpy())} {np.amax(point.point.intensity.numpy())} {np.mean(point.point.intensity.numpy())}')
-                    logger.info(f'  - device:   {point.device}')
-                    logger.info(f'  - is_cpu:   {point.is_cpu}')
-                    logger.info(f'  - is_cuda:  {point.is_cuda}')
-                    logger.info(f'  - material: {point.material}')
-
-                # fusion point cloud with image
-                point = calc_point_color(point, image, intr, extr_v2c)
-                self.pcd[0] = point
-
             for item in label2d:
                 label2d_type_set.add(superclass[name2id[item["type"].lower()]])
             for item in label3d:
                 label3d_type_set.add(item["type"])
-            self.pcd_label3d.append(draw_3d_pointcloud_label(label3d))
 
-        logger.info(f'> label2d_type_set: {label2d_type_set}')
-        logger.info(f'> label3d_type_set: {label3d_type_set}')
-        self.num = len(self.pcd)
-        print(pcolor(f'>> loading data of {self.num} frames elapsed {time.time() - g_time_beg:.3f} seconds', 'red'))
-
-        # 3D geometry
-        self.coord = o3d.geometry.TriangleMesh.create_coordinate_frame(size=10, origin=[0, 0, 0])
-        self.geometry = o3d.geometry.PointCloud()
+        print(pcolor(f'> label2d_type_set: {label2d_type_set}', 'yellow'))
+        print(pcolor(f'> label3d_type_set: {label3d_type_set}', 'yellow'))
+        print(pcolor(f'>> loading data of {len(self.pcds_raw)} frames elapsed {time.time() - g_time_beg:.3f} seconds', 'red'))
 
     def _init_ui(self):
         # main window
-        self.window = gui.Application.instance.create_window("DAIR-V2X", 1920, 1080)
+        self.window = gui.Application.instance.create_window("Camera-LiDAR-Visualization", 1920, 1080)
         self.window.set_on_layout(self._on_layout)
         self.window.set_on_close(self._on_close)
 
@@ -464,6 +428,7 @@ class AppWindow:
         self.widget3d_bottom_right.scene = rendering.Open3DScene(self.window.renderer)
         self.window.add_child(self.widget3d_bottom_right)
 
+        # Material
         self.lit = rendering.MaterialRecord()
         self.lit.shader = "defaultLit"
         self.lit_line = rendering.MaterialRecord()
@@ -473,6 +438,7 @@ class AppWindow:
         self.lit_pc_rgb = rendering.MaterialRecord()
         self.lit_pc_rgb.shader = "defaultLit"
 
+        # point cloud with intensity as colormap
         self.lit_pc_intensity = rendering.MaterialRecord()
         self.lit_pc_intensity.shader = "defaultLit"
 
@@ -487,26 +453,23 @@ class AppWindow:
             self.lit_pc_intensity.gradient = rendering.Gradient(colormap)
             self.lit_pc_intensity.gradient.mode = rendering.Gradient.GRADIENT
 
+        # set viewport
         self.widget3d_top_left.scene.show_axes(False)
         self.widget3d_top_left.scene.camera.look_at([70,0,0], [-30,0,50], [100,0,50]) # look_at(center, eye, up)
+        self.widget3d_bottom_left.scene.show_axes(False)
+        self.widget3d_bottom_left.scene.camera.look_at([70,0,0], [-30,0,50], [100,0,50])
 
         self.widget3d_top_right.scene.set_background([0.1, 0.1, 0.5, 0.5])
         self.widget3d_top_right.scene.add_geometry('coord', self.coord, self.lit)
         self.widget3d_top_right.setup_camera(75, self.widget3d_top_right.scene.bounding_box, (0, 0, 0))
-        # self.widget3d_top_right.scene.show_axes(True)
+        self.widget3d_top_right.scene.show_axes(False)
         self.widget3d_top_right.scene.show_skybox(True)
 
-        self.widget3d_bottom_left.scene.add_geometry('coord', self.coord, self.lit)
-        # self.widget3d_bottom_left.setup_camera(75, self.widget3d_bottom_left.scene.bounding_box, (0, 0, 0))
-        self.widget3d_bottom_left.scene.camera.look_at([70,0,0], [-30,0,50], [100,0,50]) # look_at(center, eye, up)
-
         self.widget3d_bottom_right.scene.add_geometry('coord', self.coord, self.lit)
-        self.widget3d_bottom_right.setup_camera(75, self.widget3d_bottom_right.scene.bounding_box, (0, 0, 0))
         self.widget3d_bottom_right.scene.add_geometry('mesh', self.mesh[0], self.lit)
-        self.widget3d_bottom_right.setup_camera(75, self.widget3d_bottom_right.scene.bounding_box, (0, 0, 0))
-        # self.widget3d_bottom_right.scene.show_skybox(True)
-        self.widget3d_bottom_right.scene.set_background([0.1, 0.1, 0.5, 1.0])
-        self.widget3d_bottom_right.scene.camera.look_at([70,0,0], [-30,0,50], [100,0,50]) # look_at(center, eye, up)
+        self.widget3d_bottom_right.scene.show_skybox(False)
+        self.widget3d_bottom_right.scene.set_background([0.5, 0.5, 0.5, 1.0])
+        self.widget3d_bottom_right.scene.camera.look_at([70,0,0], [-30,0,50], [100,0,50])
 
         # debug:
         logger.info(f'  I> widget3d.bg_color:              {self.widget3d_top_left.scene.background_color}')
@@ -515,23 +478,23 @@ class AppWindow:
         logger.info(f'  I> widget3d_bottom_right.bg_color: {self.widget3d_bottom_right.scene.background_color}')
 
         # Right panel
-        em = self.window.theme.font_size
+        em     = self.window.theme.font_size
         margin = 0.5 * em
         self.panel = gui.Vert(0.5 * em, gui.Margins(margin))
-        self.panel.add_child(gui.Label("Color Image"))
-        self.rgb_widget = gui.ImageWidget(self.rgb_images[0])
-        self.panel.add_child(self.rgb_widget)
+        self.panel.add_child(gui.Label("Raw Image"))
+        self.image_raw_widget = gui.ImageWidget(self.images_raw[0])
+        self.panel.add_child(self.image_raw_widget)
 
         # RGB + 2D Label
-        self.panel.add_child(gui.Label("Color Image + Label2D"))
-        self.rgb_label2d_widget = gui.ImageWidget(self.rgb_images[0])
-        self.panel.add_child(self.rgb_label2d_widget)
+        self.panel.add_child(gui.Label("2D Labeled Image"))
+        self.image_label_widget = gui.ImageWidget(self.images_label2d[0])
+        self.panel.add_child(self.image_label_widget)
 
         # Config Panel
         self._fileedit = gui.TextEdit()
-        filedlgbutton = gui.Button("...")
+        filedlgbutton  = gui.Button("...")
         filedlgbutton.horizontal_padding_em = 0.5
-        filedlgbutton.vertical_padding_em = 0
+        filedlgbutton.vertical_padding_em   = 0
 
         fileedit_layout = gui.Horiz()
         fileedit_layout.add_child(gui.Label("Model file"))
@@ -557,52 +520,61 @@ class AppWindow:
         if gui.Application.instance.menubar is None:
             # file
             file_menu = gui.Menu()
-            file_menu.add_item("Open...", AppWindow.MENU_OPEN)
+            file_menu.add_item("Open...",                 AppWindow.MENU_OPEN)
             file_menu.add_item("Export Current Image...", AppWindow.MENU_EXPORT)
             file_menu.add_separator()
-            file_menu.add_item("Quit", AppWindow.MENU_QUIT)
+            file_menu.add_item("Quit",                    AppWindow.MENU_QUIT)
+
             # settings
             settings_menu = gui.Menu()
-            settings_menu.add_item("Lighting & Materials",
-                                   AppWindow.MENU_SHOW_SETTINGS)
+            settings_menu.add_item("Lighting & Materials", AppWindow.MENU_SHOW_SETTINGS)
             settings_menu.set_checked(AppWindow.MENU_SHOW_SETTINGS, True)
+
             # help
             help_menu = gui.Menu()
             help_menu.add_item("About", AppWindow.MENU_ABOUT)
+
             # debug
             debug_menu = gui.Menu()
             debug_menu.add_item("Enable Animation", AppWindow.MENU_ANIMATION)
-            debug_menu.set_checked(AppWindow.MENU_ANIMATION, True)
-            debug_menu.add_item("Show Coordinate", AppWindow.MENU_COORDINATE)
-            debug_menu.set_checked(AppWindow.MENU_COORDINATE, True)
+            debug_menu.add_item("Show PointCloud",  AppWindow.MENU_POINTCLOUD)
+            debug_menu.add_item("Show Coordinate",  AppWindow.MENU_COORDINATE)
+            debug_menu.add_item("Show Label3D",     AppWindow.MENU_LABEL3D)
             debug_menu.add_separator()
-            debug_menu.add_item("Show Viewpoint", AppWindow.MENU_VIEWPOINT)
-            debug_menu.add_item("Take Screenshot", AppWindow.MENU_SCREENSHOT)
+            debug_menu.add_item("Show Viewpoint",   AppWindow.MENU_VIEWPOINT)
+            debug_menu.add_item("Take Screenshot",  AppWindow.MENU_SCREENSHOT)
+            debug_menu.set_checked(AppWindow.MENU_ANIMATION,  self.config_animation)
+            debug_menu.set_checked(AppWindow.MENU_POINTCLOUD, self.config_pointcloud)
+            debug_menu.set_checked(AppWindow.MENU_COORDINATE, self.config_coordinate)
+            debug_menu.set_checked(AppWindow.MENU_LABEL3D,    self.config_label3d)
+            debug_menu.set_checked(AppWindow.MENU_SCREENSHOT, self.config_screenshot)
 
             # menubar
             menu = gui.Menu()
-            menu.add_menu("File", file_menu)
+            menu.add_menu("File",     file_menu)
             menu.add_menu("Settings", settings_menu)
-            menu.add_menu("Help", help_menu)
-            menu.add_menu("Debug", debug_menu)
+            menu.add_menu("Help",     help_menu)
+            menu.add_menu("Debug",    debug_menu)
             gui.Application.instance.menubar = menu
 
         # connect the menu items to the window
-        self.window.set_on_menu_item_activated(AppWindow.MENU_QUIT, self._on_menu_quit)
-        self.window.set_on_menu_item_activated(AppWindow.MENU_ANIMATION, self._on_menu_animation)
+        self.window.set_on_menu_item_activated(AppWindow.MENU_QUIT,       self._on_menu_quit)
+        self.window.set_on_menu_item_activated(AppWindow.MENU_ANIMATION,  self._on_menu_animation)
         self.window.set_on_menu_item_activated(AppWindow.MENU_COORDINATE, self._on_menu_coordinate)
-        self.window.set_on_menu_item_activated(AppWindow.MENU_VIEWPOINT, self._on_menu_viewpoint)
+        self.window.set_on_menu_item_activated(AppWindow.MENU_POINTCLOUD, self._on_menu_pointcloud)
+        self.window.set_on_menu_item_activated(AppWindow.MENU_LABEL3D,    self._on_menu_label3d)
+        self.window.set_on_menu_item_activated(AppWindow.MENU_VIEWPOINT,  self._on_menu_viewpoint)
         self.window.set_on_menu_item_activated(AppWindow.MENU_SCREENSHOT, self._on_menu_screenshot)
 
     def _on_layout(self, layout_context):
-        r = self.window.content_rect
-        gap = 3
+        r    = self.window.content_rect
+        gap  = 3
         panel_width = int(r.width * 0.30)
         h_3d = (r.height - 3*gap) / 2
         w_3d = (r.width - 3*gap - panel_width) / 2
 
         # 3D
-        self.widget3d_top_left.frame              = gui.Rect(r.x+gap, r.y+gap, w_3d, h_3d)
+        self.widget3d_top_left.frame     = gui.Rect(r.x+gap, r.y+gap, w_3d, h_3d)
         self.widget3d_bottom_left.frame  = gui.Rect(r.x+gap, self.widget3d_top_left.frame.get_bottom()+gap, w_3d, h_3d)
         self.widget3d_top_right.frame    = gui.Rect(self.widget3d_top_left.frame.get_right()+gap, r.y+gap, w_3d, h_3d)
         self.widget3d_bottom_right.frame = gui.Rect(self.widget3d_top_left.frame.get_right()+gap, self.widget3d_top_left.frame.get_bottom()+gap, w_3d, h_3d)
@@ -621,16 +593,25 @@ class AppWindow:
         self.config_animation = not self.config_animation
         gui.Application.instance.menubar.set_checked(AppWindow.MENU_ANIMATION, self.config_animation)
 
+    def _on_menu_pointcloud(self):
+        self.config_pointcloud = not self.config_pointcloud
+        gui.Application.instance.menubar.set_checked(AppWindow.MENU_POINTCLOUD, self.config_pointcloud)
+
     def _on_menu_coordinate(self):
         self.config_coordinate = not self.config_coordinate
         gui.Application.instance.menubar.set_checked(AppWindow.MENU_COORDINATE, self.config_coordinate)
 
+    def _on_menu_label3d(self):
+        self.config_label3d = not self.config_label3d
+        gui.Application.instance.menubar.set_checked(AppWindow.MENU_LABEL3D, self.config_label3d)
+
     def _on_menu_viewpoint(self):
-        # todo: manually find best viewpoint
+        # todo: manually find the best viewpoint
         #       ref: https://github.com/isl-org/Open3D/issues/1483#issuecomment-582121615
         model_mat = self.widget3d_top_left.scene.camera.get_model_matrix()
         proj_mat = self.widget3d_top_left.scene.camera.get_projection_matrix()
         view_mat = self.widget3d_top_left.scene.camera.get_view_matrix()
+
         print(pcolor(f'=== model_mat ===', 'blue'))
         print(f'{model_mat}')
         print(pcolor(f'=== proj_mat ===', 'blue'))
@@ -662,14 +643,14 @@ class AppWindow:
         while not self.is_done:
             time.sleep(0.100)
 
-            rgb_frame = self.rgb_images[idx]
-            rgb_label2d_frame = self.rgb_label2d_images[idx]
-            pcd = self.pcd[idx]
-            pcd_label = self.pcd_label3d[idx]
+            image_raw_frame   = self.images_raw[idx]
+            image_label_frame = self.images_label2d[idx]
+            pcd_raw           = self.pcds_raw[idx]
+            pcd_label         = self.pcds_label3d[idx]
 
             if self.config_animation:
                 idx += 1
-                if idx >= len(self.rgb_images):
+                if idx >= len(self.images_raw):
                     idx = 0
 
             if self.config_screenshot:
@@ -678,35 +659,33 @@ class AppWindow:
                 save_name = osp.join('/mnt/datax/temp', f'frame-{idx:03d}.png')
                 print(pcolor(f'  write {save_name}', 'blue'))
                 screen.save(save_name)
-                self.paths_screenshot.append(save_name)
+                if save_name not in self.paths_screenshot:
+                    self.paths_screenshot.append(save_name)
 
             def update():
-                self.rgb_widget.update_image(rgb_frame)
-                self.rgb_label2d_widget.update_image(rgb_label2d_frame)
+                self.image_raw_widget.update_image(image_raw_frame)
+                self.image_label_widget.update_image(image_label_frame)
 
-                # top left: point cloud with intensity
                 self.widget3d_top_left.scene.clear_geometry()
+                self.widget3d_top_right.scene.clear_geometry()
+                self.widget3d_bottom_left.scene.clear_geometry()
+                self.widget3d_bottom_right.scene.clear_geometry()
+
+                if self.config_pointcloud:
+                    self.widget3d_top_left.scene.add_geometry('pointcloud', pcd_raw, self.lit_pc_intensity)
+                    self.widget3d_bottom_left.scene.add_geometry('pointcloud', pcd_raw, self.lit_pc_rgb)
+
                 if self.config_coordinate:
                     self.widget3d_top_left.scene.add_geometry('coord', self.coord, self.lit)
-                self.widget3d_top_left.scene.add_geometry('pointcloud', pcd, self.lit_pc_intensity)
-                for box_id, box_lineset in enumerate(pcd_label):
-                    self.widget3d_top_left.scene.add_geometry(f'bbox-{box_id:03d}', box_lineset, self.lit_line)
-
-                # top right
-                self.widget3d_top_right.scene.clear_geometry()
-                self.widget3d_top_right.scene.add_geometry('coord', self.coord, self.lit)
-
-                # bottom left: point cloud with rgb color from image
-                self.widget3d_bottom_left.scene.clear_geometry()
-                if self.config_coordinate:
+                    self.widget3d_top_right.scene.add_geometry('coord', self.coord, self.lit)
                     self.widget3d_bottom_left.scene.add_geometry('coord', self.coord, self.lit)
-                self.widget3d_bottom_left.scene.add_geometry('pointcloud', pcd, self.lit_pc_rgb)
-                for box_id, box_lineset in enumerate(pcd_label):
-                    self.widget3d_bottom_left.scene.add_geometry(f'bbox-{box_id:03d}', box_lineset, self.lit_line)
+                    self.widget3d_bottom_right.scene.add_geometry('coord', self.coord, self.lit)
 
-                # bottom right
-                self.widget3d_bottom_right.scene.clear_geometry()
-                self.widget3d_bottom_right.scene.add_geometry('coord', self.coord, self.lit)
+                if self.config_label3d:
+                    for box_id, box_lineset in enumerate(pcd_label):
+                        self.widget3d_top_left.scene.add_geometry(f'bbox-{box_id:03d}', box_lineset, self.lit_line)
+                        self.widget3d_bottom_left.scene.add_geometry(f'bbox-{box_id:03d}', box_lineset, self.lit_line)
+
                 self.widget3d_bottom_right.scene.add_geometry('mesh', self.mesh[0], self.lit)
 
             if not self.is_done:

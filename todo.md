@@ -10,6 +10,7 @@
 - [Check Label](#check-label)
 - [Export Video/GIF](#export-videogif)
 - [Visualize 3D Point Cloud Label with Open3D](#visualize-3d-point-cloud-label-with-open3d)
+- [References](#references)
 
 <!-- ========== ========== ========== ========== ========== -->
 
@@ -190,5 +191,13 @@ pip install -U pip -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirr
 - [x] point cloud with texture
 - [ ] mesh with texture
 - [ ] offline processing (cloud to mesh, compute texture, progress bar)
+- optimize code:
+  - [ ] remove point_normal and reuse point
+  - [ ] manually find the best viewport
+
+# References
+
+- [open-v2x/lidar](https://github.com/open-v2x/lidar)
+  - [gitee open-v2x lidar](https://gitee.com/open-v2x/lidar)
 
 <!-- End of File -->
