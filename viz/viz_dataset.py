@@ -302,27 +302,28 @@ def calc_point_color(cloud, image, intr, extr_v2c):
     return cloud
 
 class AppWindow:
-    MENU_OPEN          = 11
-    MENU_EXPORT        = 12
-    MENU_QUIT          = 13
-    MENU_SHOW_SETTINGS = 21
-    MENU_ABOUT         = 31
-    MENU_ANIMATION     = 41
-    MENU_POINTCLOUD    = 42
-    MENU_COORDINATE    = 43
-    MENU_LABEL3D       = 44
-    MENU_VIEWPOINT     = 45
-    MENU_SCREENSHOT    = 46
+    MENU_OPEN            = 11
+    MENU_EXPORT          = 12
+    MENU_QUIT            = 13
+    MENU_SETTINGS        = 21
+    MENU_RESET_VIEWPORT  = 22
+    MENU_ABOUT           = 31
+    MENU_SHOW_ANIMATION  = 41
+    MENU_SHOW_POINTCLOUD = 42
+    MENU_SHOW_COORDINATE = 43
+    MENU_SHOW_LABEL3D    = 44
+    MENU_DEBUG_VIEWPOINT = 51
+    MENU_DEMO_SCREENSHOT = 61
 
     def __init__(self, data):
         global g_time_beg
 
         # config variables
-        self.config_animation  = False
-        self.config_pointcloud = True
-        self.config_coordinate = False
-        self.config_label3d    = False
-        self.config_screenshot = False
+        self.config_show_animation  = False
+        self.config_show_pointcloud = True
+        self.config_show_coordinate = False
+        self.config_show_label3d    = False
+        self.config_demo_screenshot = False
 
         # Screenshots to GIF
         self.paths_screenshot = []
@@ -454,13 +455,10 @@ class AppWindow:
 
         # set viewport
         self.widget3d_top_left.scene.show_axes(False)
-        self.widget3d_top_left.scene.camera.look_at([70,0,0], [-30,0,50], [100,0,50]) # look_at(center, eye, up)
         self.widget3d_bottom_left.scene.show_axes(False)
-        self.widget3d_bottom_left.scene.camera.look_at([70,0,0], [-30,0,50], [100,0,50])
 
         self.widget3d_top_right.scene.set_background([0.1, 0.1, 0.5, 0.5])
         self.widget3d_top_right.scene.add_geometry('coord', self.coord, self.lit)
-        self.widget3d_top_right.setup_camera(75, self.widget3d_top_right.scene.bounding_box, (0, 0, 0))
         self.widget3d_top_right.scene.show_axes(False)
         self.widget3d_top_right.scene.show_skybox(True)
 
@@ -468,7 +466,7 @@ class AppWindow:
         self.widget3d_bottom_right.scene.add_geometry('mesh', self.mesh[0], self.lit)
         self.widget3d_bottom_right.scene.show_skybox(False)
         self.widget3d_bottom_right.scene.set_background([0.5, 0.5, 0.5, 1.0])
-        self.widget3d_bottom_right.scene.camera.look_at([70,0,0], [-30,0,50], [100,0,50])
+        self._on_menu_reset_viewport()
 
         # debug:
         logger.info(f'  I> widget3d.bg_color:              {self.widget3d_top_left.scene.background_color}')
@@ -519,51 +517,61 @@ class AppWindow:
         if gui.Application.instance.menubar is None:
             # file
             file_menu = gui.Menu()
-            file_menu.add_item("Open...",                 AppWindow.MENU_OPEN)
-            file_menu.add_item("Export Current Image...", AppWindow.MENU_EXPORT)
+            file_menu.add_item("Open...",                  AppWindow.MENU_OPEN)
+            file_menu.add_item("Export Current Image...",  AppWindow.MENU_EXPORT)
             file_menu.add_separator()
-            file_menu.add_item("Quit",                    AppWindow.MENU_QUIT)
+            file_menu.add_item("Quit",                     AppWindow.MENU_QUIT)
 
             # settings
             settings_menu = gui.Menu()
-            settings_menu.add_item("Lighting & Materials", AppWindow.MENU_SHOW_SETTINGS)
-            settings_menu.set_checked(AppWindow.MENU_SHOW_SETTINGS, True)
+            settings_menu.add_item("Lighting & Materials", AppWindow.MENU_SETTINGS)
+            settings_menu.add_item("Reset Viewport",       AppWindow.MENU_RESET_VIEWPORT)
+            settings_menu.set_checked(AppWindow.MENU_SETTINGS, True)
 
             # help
             help_menu = gui.Menu()
-            help_menu.add_item("About", AppWindow.MENU_ABOUT)
+            help_menu.add_item("About",                    AppWindow.MENU_ABOUT)
+
+            # show
+            show_menu = gui.Menu()
+            show_menu.add_item("Show Animation",           AppWindow.MENU_SHOW_ANIMATION)
+            show_menu.add_separator()
+            show_menu.add_item("Show PointCloud",          AppWindow.MENU_SHOW_POINTCLOUD)
+            show_menu.add_item("Show Coordinate",          AppWindow.MENU_SHOW_COORDINATE)
+            show_menu.add_item("Show Label3D",             AppWindow.MENU_SHOW_LABEL3D)
+            show_menu.set_checked(AppWindow.MENU_SHOW_ANIMATION,  self.config_show_animation)
+            show_menu.set_checked(AppWindow.MENU_SHOW_POINTCLOUD, self.config_show_pointcloud)
+            show_menu.set_checked(AppWindow.MENU_SHOW_COORDINATE, self.config_show_coordinate)
+            show_menu.set_checked(AppWindow.MENU_SHOW_LABEL3D,    self.config_show_label3d)
 
             # debug
             debug_menu = gui.Menu()
-            debug_menu.add_item("Enable Animation", AppWindow.MENU_ANIMATION)
-            debug_menu.add_item("Show PointCloud",  AppWindow.MENU_POINTCLOUD)
-            debug_menu.add_item("Show Coordinate",  AppWindow.MENU_COORDINATE)
-            debug_menu.add_item("Show Label3D",     AppWindow.MENU_LABEL3D)
-            debug_menu.add_separator()
-            debug_menu.add_item("Show Viewpoint",   AppWindow.MENU_VIEWPOINT)
-            debug_menu.add_item("Take Screenshot",  AppWindow.MENU_SCREENSHOT)
-            debug_menu.set_checked(AppWindow.MENU_ANIMATION,  self.config_animation)
-            debug_menu.set_checked(AppWindow.MENU_POINTCLOUD, self.config_pointcloud)
-            debug_menu.set_checked(AppWindow.MENU_COORDINATE, self.config_coordinate)
-            debug_menu.set_checked(AppWindow.MENU_LABEL3D,    self.config_label3d)
-            debug_menu.set_checked(AppWindow.MENU_SCREENSHOT, self.config_screenshot)
+            debug_menu.add_item("Print Viewpoint",         AppWindow.MENU_DEBUG_VIEWPOINT)
+
+            # demo
+            demo_menu = gui.Menu()
+            demo_menu.add_item("Take Screenshot",          AppWindow.MENU_DEMO_SCREENSHOT)
+            demo_menu.set_checked(AppWindow.MENU_DEMO_SCREENSHOT, self.config_demo_screenshot)
 
             # menubar
             menu = gui.Menu()
             menu.add_menu("File",     file_menu)
             menu.add_menu("Settings", settings_menu)
             menu.add_menu("Help",     help_menu)
+            menu.add_menu("Show",     show_menu)
             menu.add_menu("Debug",    debug_menu)
+            menu.add_menu("Demo",     demo_menu)
             gui.Application.instance.menubar = menu
 
         # connect the menu items to the window
-        self.window.set_on_menu_item_activated(AppWindow.MENU_QUIT,       self._on_menu_quit)
-        self.window.set_on_menu_item_activated(AppWindow.MENU_ANIMATION,  self._on_menu_animation)
-        self.window.set_on_menu_item_activated(AppWindow.MENU_COORDINATE, self._on_menu_coordinate)
-        self.window.set_on_menu_item_activated(AppWindow.MENU_POINTCLOUD, self._on_menu_pointcloud)
-        self.window.set_on_menu_item_activated(AppWindow.MENU_LABEL3D,    self._on_menu_label3d)
-        self.window.set_on_menu_item_activated(AppWindow.MENU_VIEWPOINT,  self._on_menu_viewpoint)
-        self.window.set_on_menu_item_activated(AppWindow.MENU_SCREENSHOT, self._on_menu_screenshot)
+        self.window.set_on_menu_item_activated(AppWindow.MENU_QUIT,            self._on_menu_quit)
+        self.window.set_on_menu_item_activated(AppWindow.MENU_RESET_VIEWPORT,  self._on_menu_reset_viewport)
+        self.window.set_on_menu_item_activated(AppWindow.MENU_SHOW_ANIMATION,  self._on_menu_show_animation)
+        self.window.set_on_menu_item_activated(AppWindow.MENU_SHOW_COORDINATE, self._on_menu_show_coordinate)
+        self.window.set_on_menu_item_activated(AppWindow.MENU_SHOW_POINTCLOUD, self._on_menu_show_pointcloud)
+        self.window.set_on_menu_item_activated(AppWindow.MENU_SHOW_LABEL3D,    self._on_menu_show_label3d)
+        self.window.set_on_menu_item_activated(AppWindow.MENU_DEBUG_VIEWPOINT, self._on_menu_debug_viewpoint)
+        self.window.set_on_menu_item_activated(AppWindow.MENU_DEMO_SCREENSHOT, self._on_menu_demo_screenshot)
 
     def _on_layout(self, layout_context):
         r    = self.window.content_rect
@@ -588,23 +596,29 @@ class AppWindow:
         self.is_done = True
         gui.Application.instance.quit()
 
-    def _on_menu_animation(self):
-        self.config_animation = not self.config_animation
-        gui.Application.instance.menubar.set_checked(AppWindow.MENU_ANIMATION, self.config_animation)
+    def _on_menu_reset_viewport(self):
+        self.widget3d_top_left.scene.camera.look_at([70,0,0], [-30,0,50], [100,0,50]) # look_at(center, eye, up)
+        self.widget3d_bottom_left.scene.camera.look_at([70,0,0], [-30,0,50], [100,0,50])
+        self.widget3d_top_right.setup_camera(75, self.widget3d_top_right.scene.bounding_box, (0, 0, 0))
+        self.widget3d_bottom_right.scene.camera.look_at([70,0,0], [-30,0,50], [100,0,50])
 
-    def _on_menu_pointcloud(self):
-        self.config_pointcloud = not self.config_pointcloud
-        gui.Application.instance.menubar.set_checked(AppWindow.MENU_POINTCLOUD, self.config_pointcloud)
+    def _on_menu_show_animation(self):
+        self.config_show_animation = not self.config_show_animation
+        gui.Application.instance.menubar.set_checked(AppWindow.MENU_SHOW_ANIMATION, self.config_show_animation)
 
-    def _on_menu_coordinate(self):
-        self.config_coordinate = not self.config_coordinate
-        gui.Application.instance.menubar.set_checked(AppWindow.MENU_COORDINATE, self.config_coordinate)
+    def _on_menu_show_pointcloud(self):
+        self.config_show_pointcloud = not self.config_show_pointcloud
+        gui.Application.instance.menubar.set_checked(AppWindow.MENU_SHOW_POINTCLOUD, self.config_show_pointcloud)
 
-    def _on_menu_label3d(self):
-        self.config_label3d = not self.config_label3d
-        gui.Application.instance.menubar.set_checked(AppWindow.MENU_LABEL3D, self.config_label3d)
+    def _on_menu_show_coordinate(self):
+        self.config_show_coordinate = not self.config_show_coordinate
+        gui.Application.instance.menubar.set_checked(AppWindow.MENU_SHOW_COORDINATE, self.config_show_coordinate)
 
-    def _on_menu_viewpoint(self):
+    def _on_menu_show_label3d(self):
+        self.config_show_label3d = not self.config_show_label3d
+        gui.Application.instance.menubar.set_checked(AppWindow.MENU_SHOW_LABEL3D, self.config_show_label3d)
+
+    def _on_menu_debug_viewpoint(self):
         # todo: manually find the best viewpoint
         #       ref: https://github.com/isl-org/Open3D/issues/1483#issuecomment-582121615
         model_mat = self.widget3d_top_left.scene.camera.get_model_matrix()
@@ -618,13 +632,13 @@ class AppWindow:
         print(pcolor(f'=== view_mat ===', 'blue'))
         print(f'{view_mat}')
 
-    def _on_menu_screenshot(self):
-        self.config_screenshot = not self.config_screenshot
-        gui.Application.instance.menubar.set_checked(AppWindow.MENU_SCREENSHOT, self.config_screenshot)
+    def _on_menu_demo_screenshot(self):
+        self.config_demo_screenshot = not self.config_demo_screenshot
+        gui.Application.instance.menubar.set_checked(AppWindow.MENU_DEMO_SCREENSHOT, self.config_demo_screenshot)
         win_sz = self.window.content_rect
         print(pcolor(f'content_rect: {win_sz.x} {win_sz.y} {win_sz.width} {win_sz.height}', 'yellow'))
 
-        if not self.config_screenshot:
+        if not self.config_demo_screenshot:
             self._create_gif()
 
     def _create_gif(self):
@@ -647,12 +661,12 @@ class AppWindow:
             pcd_raw           = self.pcds_raw[idx]
             pcd_label         = self.pcds_label3d[idx]
 
-            if self.config_animation:
+            if self.config_show_animation:
                 idx += 1
                 if idx >= len(self.images_raw):
                     idx = 0
 
-            if self.config_screenshot:
+            if self.config_demo_screenshot:
                 win_sz = self.window.content_rect
                 screen = pyscreenshot.grab(bbox=(win_sz.x, 0, win_sz.width, win_sz.height), childprocess=False)
                 save_name = osp.join('/mnt/datax/temp', f'frame-{idx:03d}.png')
@@ -670,17 +684,17 @@ class AppWindow:
                 self.widget3d_bottom_left.scene.clear_geometry()
                 self.widget3d_bottom_right.scene.clear_geometry()
 
-                if self.config_pointcloud:
+                if self.config_show_pointcloud:
                     self.widget3d_top_left.scene.add_geometry('pointcloud', pcd_raw, self.unlit_gradient)
                     self.widget3d_bottom_left.scene.add_geometry('pointcloud', pcd_raw, self.lit)
 
-                if self.config_coordinate:
+                if self.config_show_coordinate:
                     self.widget3d_top_left.scene.add_geometry('coord', self.coord, self.lit)
                     self.widget3d_top_right.scene.add_geometry('coord', self.coord, self.lit)
                     self.widget3d_bottom_left.scene.add_geometry('coord', self.coord, self.lit)
                     self.widget3d_bottom_right.scene.add_geometry('coord', self.coord, self.lit)
 
-                if self.config_label3d:
+                if self.config_show_label3d:
                     for box_id, box_lineset in enumerate(pcd_label):
                         self.widget3d_top_left.scene.add_geometry(f'bbox-{box_id:03d}', box_lineset, self.unlit_line)
                         self.widget3d_bottom_left.scene.add_geometry(f'bbox-{box_id:03d}', box_lineset, self.unlit_line)
