@@ -192,7 +192,8 @@ pip install -U pip -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirr
 - [ ] mesh with texture
 - [ ] offline processing (cloud to mesh, compute texture, progress bar)
 - optimize code:
-  - [ ] remove point_normal and reuse point
+  - [x] ~~remove point_normal and reuse point~~
+    - open3d has open3d.geometry.TriangleMesh.create_from_point_cloud_ball_pivoting(pcd, radii), but `doesn't have` open3d.t.geometry.TriangleMesh.create_from_point_cloud_ball_pivoting(pcd, radii)
   - [ ] manually find the best viewport
 
 # References

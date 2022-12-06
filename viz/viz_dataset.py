@@ -166,22 +166,25 @@ class PathConfig:
         # image = o3d.io.read_image(self.image_paths[k]) 
         # point = o3d.io.read_point_cloud(self.point_paths[k])
         image = o3d.t.io.read_image(self.image_paths[k])
-        point = o3d.t.io.read_point_cloud(self.point_paths[k])
+        cloud_t_xyzi = o3d.t.io.read_point_cloud(self.point_paths[k]) # xyzi
 
         # o3d.core.Tensor [arange, diag, empty, eye, from_dlpack, from_numpy,  full, load, ones, zeros]
-        point.point.colors = o3d.core.Tensor.full(point.point.positions.shape, 0.3, point.point.positions.dtype, point.point.positions.device)
+        cloud_t_xyzi.point.colors = o3d.core.Tensor.full(cloud_t_xyzi.point.positions.shape, 0.3, cloud_t_xyzi.point.positions.dtype, cloud_t_xyzi.point.positions.device)
 
-        # todo: remove point_normal and reuse point
-        point_normal = o3d.io.read_point_cloud(self.point_paths[k])
+        # open3d has open3d.geometry.TriangleMesh.create_from_point_cloud_ball_pivoting(pcd, radii),
+        #   but doesn't have open3d.t.geometry.TriangleMesh.create_from_point_cloud_ball_pivoting(pcd, radii)
+        cloud_xyz    = o3d.io.read_point_cloud(self.point_paths[k])
         label2d      = load_json(self.label2d_paths[k])
         label3d      = load_json(self.label3d_paths[k])
         intr         = load_json(self.intr_paths[k])
         extr_v2c     = load_json(self.extr_v2c_paths[k])
         extr_v2w     = load_json(self.extr_v2w_paths[k])
 
-        if isinstance(point, o3d.t.geometry.PointCloud):
-            point.point['__visualization_scalar'] = point.point.intensity
-        return image, point, label2d, label3d, intr, extr_v2c, extr_v2w, point_normal
+        '''
+        if isinstance(cloud_t_xyzi, o3d.t.geometry.PointCloud):
+            cloud_t_xyzi.point['__visualization_scalar'] = cloud_t_xyzi.point.intensity
+        '''
+        return image, cloud_t_xyzi, label2d, label3d, intr, extr_v2c, extr_v2w, cloud_xyz
 
     def read_frames(self):
         frames = []
@@ -319,10 +322,10 @@ class AppWindow:
         global g_time_beg
 
         # config variables
-        self.config_show_animation  = False
+        self.config_show_animation  = True
         self.config_show_pointcloud = True
-        self.config_show_coordinate = False
-        self.config_show_label3d    = False
+        self.config_show_coordinate = True
+        self.config_show_label3d    = True
         self.config_demo_screenshot = False
 
         # Screenshots to GIF
@@ -337,31 +340,53 @@ class AppWindow:
 
     def _init_data(self, data):
         # data for visualization
-        self.coord          = o3d.geometry.TriangleMesh.create_coordinate_frame(size=10, origin=[0, 0, 0])
-        self.images_raw     = []
-        self.images_label2d = []
-        self.pcds_raw       = []
-        self.pcds_label3d   = []
-        self.mesh           = []
+        self.coord           = o3d.geometry.TriangleMesh.create_coordinate_frame(size=10, origin=[0, 0, 0])
+        self.images_raw      = []
+        self.images_label2d  = []
+        self.pcds_t_xyzi_raw = []
+        self.pcds_t_xyzi     = []
+        self.pcds_t_xyzz     = []
+        self.pcds_t_xyzrgbi  = []
+        self.boxes_label3d   = []
+        self.mesh            = []
 
         label2d_type_set = set()
         label3d_type_set = set()
+        min_z            = 1000
+        max_z            = -min_z
 
         for framd_id, data_frame in enumerate(data.read_frames()):
-            image, point, label2d, label3d, intr, extr_v2c, extr_v2w, point_normal = data_frame
+            image, cloud_t_xyzi, label2d, label3d, intr, extr_v2c, extr_v2w, cloud_xyz = data_frame
             self.images_raw.append(image)
             self.images_label2d.append(draw_2d_image_label(image, label2d))
 
-            # self.pcds_raw.append(point)
-            point = calc_point_color(point, image, intr, extr_v2c)
-            self.pcds_raw.append(point)
-            self.pcds_label3d.append(draw_3d_pointcloud_label(label3d))
+            vec_z = cloud_t_xyzi.point.positions.numpy()[:, 2]
+            a_min_z = np.amin(vec_z)
+            a_max_z = np.amax(vec_z)
+            if min_z > a_min_z:
+                min_z = a_min_z
+            if max_z < a_max_z:
+                max_z = a_max_z
+
+            self.pcds_t_xyzi_raw.append(cloud_t_xyzi)
+            t_xyzi = cloud_t_xyzi.clone()
+            t_xyzi.point['__visualization_scalar'] = t_xyzi.point.intensity
+            self.pcds_t_xyzi.append(t_xyzi)
+            t_xyzz = cloud_t_xyzi.clone()
+            t_xyzz.point['__visualization_scalar'] = t_xyzz.point.positions.numpy()[:, 2]
+            self.pcds_t_xyzz.append(t_xyzz)
+
+            t_xyzrgbi = cloud_t_xyzi.clone()
+            t_xyzrgbi = calc_point_color(t_xyzrgbi, image, intr, extr_v2c)
+            self.pcds_t_xyzrgbi.append(t_xyzrgbi)
+
+            self.boxes_label3d.append(draw_3d_pointcloud_label(label3d))
 
             # point cloud to mesh
             if framd_id < 3:
-                point_normal.estimate_normals()
+                cloud_xyz.estimate_normals()
                 radii = [0.2]
-                tri_mesh = o3d.geometry.TriangleMesh.create_from_point_cloud_ball_pivoting(point_normal, o3d.utility.DoubleVector(radii))
+                tri_mesh = o3d.geometry.TriangleMesh.create_from_point_cloud_ball_pivoting(cloud_xyz, o3d.utility.DoubleVector(radii))
                 self.mesh.append(tri_mesh)
 
             # === Debug ===
@@ -372,28 +397,28 @@ class AppWindow:
                 logger.info(f'\n=== label2d ===  {type(label2d)} {len(label2d)} {type(label2d[0])}\n{label2d[0]}')
                 logger.info(f'\n=== label3d ===  {type(label3d)} {len(label3d)} {type(label3d[0])}\n{label3d[0]}')
 
-                if isinstance(point, o3d.geometry.PointCloud):
+                if isinstance(cloud_t_xyzi, o3d.geometry.PointCloud):
                     logger.info(f'o3d.geometry.PointCloud:')
-                    logger.info(f'  > has_points:      {point.has_points()}')
-                    logger.info(f'  > has_normals:     {point.has_normals()}')
-                    logger.info(f'  > has_colors:      {point.has_colors()}')
-                    logger.info(f'  > has_covariances: {point.has_covariances()}')
+                    logger.info(f'  > has_points:      {cloud_t_xyzi.has_points()}')
+                    logger.info(f'  > has_normals:     {cloud_t_xyzi.has_normals()}')
+                    logger.info(f'  > has_colors:      {cloud_t_xyzi.has_colors()}')
+                    logger.info(f'  > has_covariances: {cloud_t_xyzi.has_covariances()}')
 
-                if isinstance(point, o3d.t.geometry.PointCloud):
+                if isinstance(cloud_t_xyzi, o3d.t.geometry.PointCloud):
                     logger.info(f'o3d.t.geometry.PointCloud:')
-                    logger.info(f'  > point.point {type(point.point)} {point.point.primary_key} {str(point.point)}')
-                    logger.info(f'  > intensity:  {np.amin(point.point.intensity.numpy())} {np.amax(point.point.intensity.numpy())} {np.mean(point.point.intensity.numpy())}')
-                    logger.info(f'  - device:     {point.device}')
-                    logger.info(f'  - is_cpu:     {point.is_cpu}')
-                    logger.info(f'  - is_cuda:    {point.is_cuda}')
-                    logger.info(f'  - material:   {point.material}')
+                    logger.info(f'  > point.point {type(cloud_t_xyzi.point)} {cloud_t_xyzi.point.primary_key} {str(cloud_t_xyzi.point)}')
+                    logger.info(f'  > intensity:  {np.amin(cloud_t_xyzi.point.intensity.numpy())} {np.amax(cloud_t_xyzi.point.intensity.numpy())} {np.mean(cloud_t_xyzi.point.intensity.numpy())}')
+                    logger.info(f'  - device:     {cloud_t_xyzi.device}')
+                    logger.info(f'  - is_cpu:     {cloud_t_xyzi.is_cpu}')
+                    logger.info(f'  - is_cuda:    {cloud_t_xyzi.is_cuda}')
+                    logger.info(f'  - material:   {cloud_t_xyzi.material}')
 
                 # === mesh ===
                 # tri_mesh = o3d.geometry.TriangleMesh.create_from_point_cloud_alpha_shape(point_normal, 1.03)
-                point_normal.estimate_normals()
+                cloud_xyz.estimate_normals()
                 # tri_mesh, _ = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(point_normal, depth=9)
                 radii = [0.1, 0.2, 0.4, 0.8, 1.6, 3.2]
-                tri_mesh = o3d.geometry.TriangleMesh.create_from_point_cloud_ball_pivoting(point_normal, o3d.utility.DoubleVector(radii))
+                tri_mesh = o3d.geometry.TriangleMesh.create_from_point_cloud_ball_pivoting(cloud_xyz, o3d.utility.DoubleVector(radii))
 
                 logger.info(f'  I> vertices:  {np.asarray(tri_mesh.vertices).shape}')
                 logger.info(f'  I> triangles: {np.asarray(tri_mesh.triangles).shape}')
@@ -405,7 +430,8 @@ class AppWindow:
 
         print(pcolor(f'> label2d_type_set: {label2d_type_set}', 'yellow'))
         print(pcolor(f'> label3d_type_set: {label3d_type_set}', 'yellow'))
-        print(pcolor(f'>> loading data of {len(self.pcds_raw)} frames elapsed {time.time() - g_time_beg:.3f} seconds', 'red'))
+        print(pcolor(f'> z_range: [{min_z}, {max_z}]', 'blue'))
+        print(pcolor(f'>> loading data of {len(self.pcds_t_xyzi)} frames elapsed {time.time() - g_time_beg:.3f} seconds', 'red'))
 
     def _init_ui(self):
         # main window
@@ -434,6 +460,8 @@ class AppWindow:
         #   https://github.com/isl-org/Open3D/tree/v0.16.0/cpp/open3d/visualization/gui/Materials
         self.lit = rendering.MaterialRecord()
         self.lit.shader = "defaultLit"
+        self.unlit = rendering.MaterialRecord()
+        self.unlit.shader = "defalutUnlit"
         self.unlit_line = rendering.MaterialRecord()
         self.unlit_line.shader = "unlitLine"
         self.unlit_line.line_width = 3
@@ -453,18 +481,33 @@ class AppWindow:
             self.unlit_gradient.gradient = rendering.Gradient(colormap)
             self.unlit_gradient.gradient.mode = rendering.Gradient.GRADIENT
 
+        # point cloud with height as colormap
+        self.unlit_height = rendering.MaterialRecord()
+        self.unlit_height.shader = "defaultLit"
+
+        if has_ml3d:
+            colormap = Colormap([
+                Colormap.Point(0.0, [0.0, 0.0, 0.0]),
+                Colormap.Point(1.0, [1.0, 0.0, 0.0])
+            ])
+            colormap = list(rendering.Gradient.Point(pt.value, pt.color + [1.0]) for pt in colormap.points)
+
+            self.unlit_height.shader = "unlitGradient" # https://github.com/isl-org/Open3D/blob/v0.16.0/cpp/open3d/visualization/gui/Materials/unlitGradient.mat
+            self.unlit_height.scalar_min = -1.0
+            self.unlit_height.scalar_max =  3.0
+            self.unlit_height.gradient = rendering.Gradient(colormap)
+            self.unlit_height.gradient.mode = rendering.Gradient.GRADIENT
+
         # set viewport
         self.widget3d_top_left.scene.show_axes(False)
         self.widget3d_bottom_left.scene.show_axes(False)
 
-        self.widget3d_top_right.scene.set_background([0.1, 0.1, 0.5, 0.5])
         self.widget3d_top_right.scene.add_geometry('coord', self.coord, self.lit)
         self.widget3d_top_right.scene.show_axes(False)
-        self.widget3d_top_right.scene.show_skybox(True)
 
         self.widget3d_bottom_right.scene.add_geometry('coord', self.coord, self.lit)
         self.widget3d_bottom_right.scene.add_geometry('mesh', self.mesh[0], self.lit)
-        self.widget3d_bottom_right.scene.show_skybox(False)
+        self.widget3d_bottom_right.scene.show_skybox(True)
         self.widget3d_bottom_right.scene.set_background([0.5, 0.5, 0.5, 1.0])
         self._on_menu_reset_viewport()
 
@@ -599,7 +642,9 @@ class AppWindow:
     def _on_menu_reset_viewport(self):
         self.widget3d_top_left.scene.camera.look_at([70,0,0], [-30,0,50], [100,0,50]) # look_at(center, eye, up)
         self.widget3d_bottom_left.scene.camera.look_at([70,0,0], [-30,0,50], [100,0,50])
-        self.widget3d_top_right.setup_camera(75, self.widget3d_top_right.scene.bounding_box, (0, 0, 0))
+
+        self.widget3d_top_right.scene.camera.look_at([70,0,0], [-30,0,50], [100,0,50])
+        # self.widget3d_top_right.setup_camera(75, self.widget3d_top_right.scene.bounding_box, (0, 0, 0))
         self.widget3d_bottom_right.scene.camera.look_at([70,0,0], [-30,0,50], [100,0,50])
 
     def _on_menu_show_animation(self):
@@ -658,8 +703,10 @@ class AppWindow:
 
             image_raw_frame   = self.images_raw[idx]
             image_label_frame = self.images_label2d[idx]
-            pcd_raw           = self.pcds_raw[idx]
-            pcd_label         = self.pcds_label3d[idx]
+            pcd_t_xyzi        = self.pcds_t_xyzi[idx]
+            pcd_t_xyzz        = self.pcds_t_xyzz[idx]
+            pcd_t_xyzrgbi     = self.pcds_t_xyzrgbi[idx]
+            boxes3d           = self.boxes_label3d[idx]
 
             if self.config_show_animation:
                 idx += 1
@@ -685,8 +732,10 @@ class AppWindow:
                 self.widget3d_bottom_right.scene.clear_geometry()
 
                 if self.config_show_pointcloud:
-                    self.widget3d_top_left.scene.add_geometry('pointcloud', pcd_raw, self.unlit_gradient)
-                    self.widget3d_bottom_left.scene.add_geometry('pointcloud', pcd_raw, self.lit)
+                    self.widget3d_top_left.scene.add_geometry('pointcloud', pcd_t_xyzi, self.unlit_gradient)
+                    self.widget3d_top_right.scene.add_geometry('pointcloud', pcd_t_xyzrgbi, self.unlit)
+                    # self.widget3d_bottom_left.scene.add_geometry('pointcloud', pcd_t_xyzrgbi, self.lit)
+                    self.widget3d_bottom_left.scene.add_geometry('pointcloud', pcd_t_xyzz, self.unlit_height)
 
                 if self.config_show_coordinate:
                     self.widget3d_top_left.scene.add_geometry('coord', self.coord, self.lit)
@@ -695,7 +744,7 @@ class AppWindow:
                     self.widget3d_bottom_right.scene.add_geometry('coord', self.coord, self.lit)
 
                 if self.config_show_label3d:
-                    for box_id, box_lineset in enumerate(pcd_label):
+                    for box_id, box_lineset in enumerate(boxes3d):
                         self.widget3d_top_left.scene.add_geometry(f'bbox-{box_id:03d}', box_lineset, self.unlit_line)
                         self.widget3d_bottom_left.scene.add_geometry(f'bbox-{box_id:03d}', box_lineset, self.unlit_line)
 
