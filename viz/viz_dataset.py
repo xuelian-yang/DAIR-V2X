@@ -542,17 +542,32 @@ class AppWindow:
         fileedit_layout.add_fixed(0.25 * em)
         fileedit_layout.add_child(filedlgbutton)
 
-        collapse = gui.CollapsableVert("Config", 0.33 * em, gui.Margins(em, 0, 0, 0))
-        collapse.add_child(fileedit_layout)
+        collapse_v = gui.CollapsableVert("Config", 0.33 * em, gui.Margins(em, 0, 0, 0))
+        collapse_v.add_child(fileedit_layout)
 
         self._progress = gui.ProgressBar()
         self._progress.value = 0
         prog_layout = gui.Horiz(em)
         prog_layout.add_child(gui.Label("Cloud to Mesh Progress..."))
         prog_layout.add_child(self._progress)
-        collapse.add_child(prog_layout)
+        collapse_v.add_child(prog_layout)
 
-        self.panel.add_child(collapse)
+        # tabs for config
+        tabs = gui.TabControl()
+        tab_layout = gui.Vert()
+        combo_layout = gui.Combobox()
+        combo_layout.add_item('show four widgets')
+        combo_layout.add_item('show widget 1')
+        combo_layout.add_item('show widget 2')
+        combo_layout.add_item('show widget 3')
+        combo_layout.add_item('show widget 4')
+        combo_layout.set_on_selection_changed(self._on_layout_choice)
+        tab_layout.add_child(combo_layout)
+        tabs.add_tab('Layout', tab_layout)
+
+        collapse_v.add_child(tabs)
+
+        self.panel.add_child(collapse_v)
         self.window.add_child(self.panel)
 
     def _init_menu(self):
@@ -617,6 +632,7 @@ class AppWindow:
         self.window.set_on_menu_item_activated(AppWindow.MENU_DEMO_SCREENSHOT, self._on_menu_demo_screenshot)
 
     def _on_layout(self, layout_context):
+        print(pcolor(f'layout_context: {type(layout_context)}', 'yellow'))
         r    = self.window.content_rect
         gap  = 3
         panel_width = int(r.width * 0.30)
@@ -630,6 +646,25 @@ class AppWindow:
         self.widget3d_bottom_right.frame = gui.Rect(self.widget3d_top_left.frame.get_right()+gap, self.widget3d_top_left.frame.get_bottom()+gap, w_3d, h_3d)
         # 2D
         self.panel.frame                 = gui.Rect(r.width - panel_width, r.y, panel_width, r.height)
+
+    def _on_layout_choice(self, new_val, new_idx):
+        print(pcolor(f'  > new layout: {new_val} {new_idx}', 'blue'))
+        if new_idx == 0:
+            self._on_layout(self.window.content_rect)
+        elif 1 <= new_idx <= 4:
+            widgets = [None, self.widget3d_top_left, self.widget3d_top_right, self.widget3d_bottom_left, self.widget3d_bottom_right]
+
+            r    = self.window.content_rect
+            panel_width = int(r.width * 0.30)
+            for i in range(1, len(widgets)):
+                focus_widget3d = widgets[i]
+                if i == new_idx:
+                    focus_widget3d.frame = gui.Rect(r.x, r.y, r.width - panel_width, r.height)
+                else:
+                    focus_widget3d.frame = gui.Rect(r.x, r.y, 0, 0)
+            self.panel.frame     = gui.Rect(r.width - panel_width, r.y, panel_width, r.height)
+        else:
+            raise ValueError(f'Unexpected value')
 
     def _on_close(self):
         self.is_done = True
