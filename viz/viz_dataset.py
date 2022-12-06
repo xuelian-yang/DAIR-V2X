@@ -17,6 +17,9 @@ References
         https://github.com/isl-org/Open3D/issues/2545#issuecomment-987119956
     look_at(center, eye, up)
         http://www.open3d.org/docs/release/python_api/open3d.visualization.rendering.Camera.html#open3d.visualization.rendering.Camera.look_at
+    Materials
+        https://github.com/isl-org/Open3D/tree/v0.16.0/cpp/open3d/visualization/gui/Materials
+        https://github.com/isl-org/Open3D/blob/v0.16.0/cpp/open3d/visualization/visualizer/GuiSettingsModel.h#L59
     Multiple viewports per window
         https://github.com/isl-org/Open3D/issues/999#issuecomment-720839907
     Open3D example - video.py
@@ -278,8 +281,6 @@ def calc_point_color(cloud, image, intr, extr_v2c):
                     (uv_origin[:, 1] >= 0) & (uv_origin[:, 1] < h), True, False)
 
     cloud.point.colors  = o3d.core.Tensor.zeros(cloud.point.positions.shape, cloud.point.positions.dtype, cloud.point.positions.device)
-    # tensor_colors       = o3d.core.Tensor.zeros(cloud.point.positions.shape, cloud.point.positions.dtype, cloud.point.positions.device)
-    # tensor_colors[v_in] = np.array([0.9, 0.2, 0.3])
     # cloud.point.colors[v_in] = np.array([0.9, 0.2, 0.3])
 
     valid_uv_origin = uv_origin[v_in]
@@ -428,30 +429,28 @@ class AppWindow:
         self.widget3d_bottom_right.scene = rendering.Open3DScene(self.window.renderer)
         self.window.add_child(self.widget3d_bottom_right)
 
-        # Material
+        # visualization / gui / Materials
+        #   https://github.com/isl-org/Open3D/tree/v0.16.0/cpp/open3d/visualization/gui/Materials
         self.lit = rendering.MaterialRecord()
         self.lit.shader = "defaultLit"
-        self.lit_line = rendering.MaterialRecord()
-        self.lit_line.shader = "unlitLine"
-        self.lit_line.line_width = 3
-
-        self.lit_pc_rgb = rendering.MaterialRecord()
-        self.lit_pc_rgb.shader = "defaultLit"
+        self.unlit_line = rendering.MaterialRecord()
+        self.unlit_line.shader = "unlitLine"
+        self.unlit_line.line_width = 3
 
         # point cloud with intensity as colormap
-        self.lit_pc_intensity = rendering.MaterialRecord()
-        self.lit_pc_intensity.shader = "defaultLit"
+        self.unlit_gradient = rendering.MaterialRecord()
+        self.unlit_gradient.shader = "defaultLit"
 
         if has_ml3d:
             # colormap = Colormap.make_rainbow()
             colormap = Colormap.make_greyscale()
             colormap = list(rendering.Gradient.Point(pt.value, pt.color + [1.0]) for pt in colormap.points)
 
-            self.lit_pc_intensity.shader = "unlitGradient"
-            self.lit_pc_intensity.scalar_min = 0.0
-            self.lit_pc_intensity.scalar_max = 1.0
-            self.lit_pc_intensity.gradient = rendering.Gradient(colormap)
-            self.lit_pc_intensity.gradient.mode = rendering.Gradient.GRADIENT
+            self.unlit_gradient.shader = "unlitGradient" # https://github.com/isl-org/Open3D/blob/v0.16.0/cpp/open3d/visualization/gui/Materials/unlitGradient.mat
+            self.unlit_gradient.scalar_min = 0.0
+            self.unlit_gradient.scalar_max = 1.0
+            self.unlit_gradient.gradient = rendering.Gradient(colormap)
+            self.unlit_gradient.gradient.mode = rendering.Gradient.GRADIENT
 
         # set viewport
         self.widget3d_top_left.scene.show_axes(False)
@@ -672,8 +671,8 @@ class AppWindow:
                 self.widget3d_bottom_right.scene.clear_geometry()
 
                 if self.config_pointcloud:
-                    self.widget3d_top_left.scene.add_geometry('pointcloud', pcd_raw, self.lit_pc_intensity)
-                    self.widget3d_bottom_left.scene.add_geometry('pointcloud', pcd_raw, self.lit_pc_rgb)
+                    self.widget3d_top_left.scene.add_geometry('pointcloud', pcd_raw, self.unlit_gradient)
+                    self.widget3d_bottom_left.scene.add_geometry('pointcloud', pcd_raw, self.lit)
 
                 if self.config_coordinate:
                     self.widget3d_top_left.scene.add_geometry('coord', self.coord, self.lit)
@@ -683,8 +682,8 @@ class AppWindow:
 
                 if self.config_label3d:
                     for box_id, box_lineset in enumerate(pcd_label):
-                        self.widget3d_top_left.scene.add_geometry(f'bbox-{box_id:03d}', box_lineset, self.lit_line)
-                        self.widget3d_bottom_left.scene.add_geometry(f'bbox-{box_id:03d}', box_lineset, self.lit_line)
+                        self.widget3d_top_left.scene.add_geometry(f'bbox-{box_id:03d}', box_lineset, self.unlit_line)
+                        self.widget3d_bottom_left.scene.add_geometry(f'bbox-{box_id:03d}', box_lineset, self.unlit_line)
 
                 self.widget3d_bottom_right.scene.add_geometry('mesh', self.mesh[0], self.lit)
 
