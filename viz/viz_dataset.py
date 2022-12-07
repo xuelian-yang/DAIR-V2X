@@ -353,21 +353,23 @@ class AppWindow:
 
         label2d_type_set = set()
         label3d_type_set = set()
-        min_z            = 1000
-        max_z            = -min_z
+        xyz_range        = np.zeros((3, 2), dtype=np.float32)
+        xyz_range[:, 0]  = 1000
+        xyz_range[:, 1]  = -1000
 
         for framd_id, data_frame in enumerate(data.read_frames()):
             image, cloud_t_xyzi, label2d, label3d, intr, extr_v2c, extr_v2w, cloud_xyz = data_frame
             self.images_raw.append(image)
             self.images_label2d.append(draw_2d_image_label(image, label2d))
 
-            vec_z = cloud_t_xyzi.point.positions.numpy()[:, 2]
-            a_min_z = np.amin(vec_z)
-            a_max_z = np.amax(vec_z)
-            if min_z > a_min_z:
-                min_z = a_min_z
-            if max_z < a_max_z:
-                max_z = a_max_z
+            min_val = np.min(cloud_t_xyzi.point.positions.numpy(), axis=0)
+            max_val = np.max(cloud_t_xyzi.point.positions.numpy(), axis=0)
+            # print(pcolor(f'min_val: {type(min_val)} {min_val.shape} {min_val.dtype}', 'red'))
+            for i in range(min_val.shape[0]):
+                if xyz_range[i, 0] > min_val[i]:
+                    xyz_range[i, 0] = min_val[i]
+                if xyz_range[i, 1] < max_val[i]:
+                    xyz_range[i, 1] = max_val[i]
 
             self.pcds_t_xyzi_raw.append(cloud_t_xyzi)
             t_xyzi = cloud_t_xyzi.clone()
@@ -431,7 +433,10 @@ class AppWindow:
 
         print(pcolor(f'> label2d_type_set: {label2d_type_set}', 'yellow'))
         print(pcolor(f'> label3d_type_set: {label3d_type_set}', 'yellow'))
-        print(pcolor(f'> z_range: [{min_z}, {max_z}]', 'blue'))
+        print(pcolor(f'Scene BoundingBox:', 'red'))
+        print(pcolor(f'  > x_range: [{xyz_range[0, 0]:8.3f}, {xyz_range[0, 1]:8.3f}]', 'blue'))
+        print(pcolor(f'  > y_range: [{xyz_range[1, 0]:8.3f}, {xyz_range[1, 1]:8.3f}]', 'blue'))
+        print(pcolor(f'  > z_range: [{xyz_range[2, 0]:8.3f}, {xyz_range[2, 1]:8.3f}]', 'blue'))
         print(pcolor(f'>> loading data of {len(self.pcds_t_xyzi)} frames elapsed {time.time() - g_time_beg:.3f} seconds', 'red'))
 
     def _init_ui(self):
@@ -533,12 +538,14 @@ class AppWindow:
         em     = self.window.theme.font_size
         margin = 0.5 * em
         self.panel = gui.Vert(0.5 * em, gui.Margins(margin))
-        self.panel.add_child(gui.Label("Raw Image"))
-        self.image_raw_widget = gui.ImageWidget(self.images_raw[0])
-        self.panel.add_child(self.image_raw_widget)
+        # self.panel.add_child(gui.Label("Raw Image"))
+        # self.image_raw_widget = gui.ImageWidget(self.images_raw[0])
+        # self.panel.add_child(self.image_raw_widget)
 
         # RGB + 2D Label
-        self.panel.add_child(gui.Label("2D Labeled Image"))
+        gui_label = gui.Label("2D Labeled Image")
+        gui_label.text_color = gui.Color(1.0, 0.5, 0.0)
+        self.panel.add_child(gui_label)
         self.image_label_widget = gui.ImageWidget(self.images_label2d[0])
         self.panel.add_child(self.image_label_widget)
 
@@ -566,22 +573,19 @@ class AppWindow:
 
         # tabs for config
         tabs = gui.TabControl()
-        # tab_layout = gui.Vert()
-        combo = gui.Combobox()
-        combo.add_item('show four widgets')
-        combo.add_item('show widget 1')
-        combo.add_item('show widget 2')
-        combo.add_item('show widget 3')
-        combo.add_item('show widget 4')
-        combo.set_on_selection_changed(self._on_layout_combo_choice)
-        # tab_layout.add_child(combo)
-        # tabs.add_tab('Layout Combobox', tab_layout)
-        tabs.add_tab('Layout Combobox', combo)
-
         tab_layout_radio = gui.RadioButton(gui.RadioButton.VERT)
         tab_layout_radio.set_items(['four widgets', 'TL widget', 'TR widget', 'BL widget', 'BR widget'])
         tab_layout_radio.set_on_selection_changed(self._on_layout_radio_choice)
         tabs.add_tab('Layout RadioButton', tab_layout_radio)
+
+        tab_layout_combo = gui.Combobox()
+        tab_layout_combo.add_item('four widgets')
+        tab_layout_combo.add_item('TL widget')
+        tab_layout_combo.add_item('TR widget')
+        tab_layout_combo.add_item('BL widget')
+        tab_layout_combo.add_item('BR widget')
+        tab_layout_combo.set_on_selection_changed(self._on_layout_combo_choice)
+        tabs.add_tab('Layout Combobox', tab_layout_combo)
 
         collapse_v.add_child(tabs)
 
@@ -671,7 +675,6 @@ class AppWindow:
         self.panel.frame                 = gui.Rect(r.width - panel_width, r.y, panel_width, r.height)
 
     def _on_layout_combo_choice(self, new_val, new_idx):
-        print(pcolor(f'  > new layout: {new_val} {new_idx}', 'blue'))
         if new_idx == 0:
             self._on_layout(self.window.content_rect)
         elif 1 <= new_idx <= 4:
@@ -690,8 +693,7 @@ class AppWindow:
             raise ValueError(f'Unexpected value')
 
     def _on_layout_radio_choice(self, idx):
-        print(pcolor(f'  > new idx: {idx}', 'blue'))
-        self._on_layout_combo_choice('trick', idx)
+        self._on_layout_combo_choice('radio choice', idx)
 
     def _on_close(self):
         self.is_done = True
@@ -788,7 +790,7 @@ class AppWindow:
                     self.paths_screenshot.append(save_name)
 
             def update():
-                self.image_raw_widget.update_image(image_raw_frame)
+                # self.image_raw_widget.update_image(image_raw_frame)
                 self.image_label_widget.update_image(image_label_frame)
 
                 self.widget3d_top_left.scene.clear_geometry()
