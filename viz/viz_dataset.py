@@ -513,7 +513,7 @@ class AppWindow:
 
         self.widget3d_bottom_right.scene.add_geometry('coord', self.coord, self.lit)
         self.widget3d_bottom_right.scene.add_geometry('mesh', self.mesh[0], self.lit)
-        self.widget3d_bottom_right.scene.show_skybox(True)
+        # self.widget3d_bottom_right.scene.show_skybox(True)
         self.widget3d_bottom_right.scene.set_background([0.5, 0.5, 0.5, 1.0])
         self._on_menu_reset_viewport()
 
@@ -566,16 +566,22 @@ class AppWindow:
 
         # tabs for config
         tabs = gui.TabControl()
-        tab_layout = gui.Vert()
-        combo_layout = gui.Combobox()
-        combo_layout.add_item('show four widgets')
-        combo_layout.add_item('show widget 1')
-        combo_layout.add_item('show widget 2')
-        combo_layout.add_item('show widget 3')
-        combo_layout.add_item('show widget 4')
-        combo_layout.set_on_selection_changed(self._on_layout_choice)
-        tab_layout.add_child(combo_layout)
-        tabs.add_tab('Layout', tab_layout)
+        # tab_layout = gui.Vert()
+        combo = gui.Combobox()
+        combo.add_item('show four widgets')
+        combo.add_item('show widget 1')
+        combo.add_item('show widget 2')
+        combo.add_item('show widget 3')
+        combo.add_item('show widget 4')
+        combo.set_on_selection_changed(self._on_layout_combo_choice)
+        # tab_layout.add_child(combo)
+        # tabs.add_tab('Layout Combobox', tab_layout)
+        tabs.add_tab('Layout Combobox', combo)
+
+        tab_layout_radio = gui.RadioButton(gui.RadioButton.VERT)
+        tab_layout_radio.set_items(['four widgets', 'TL widget', 'TR widget', 'BL widget', 'BR widget'])
+        tab_layout_radio.set_on_selection_changed(self._on_layout_radio_choice)
+        tabs.add_tab('Layout RadioButton', tab_layout_radio)
 
         collapse_v.add_child(tabs)
 
@@ -664,7 +670,7 @@ class AppWindow:
         # 2D
         self.panel.frame                 = gui.Rect(r.width - panel_width, r.y, panel_width, r.height)
 
-    def _on_layout_choice(self, new_val, new_idx):
+    def _on_layout_combo_choice(self, new_val, new_idx):
         print(pcolor(f'  > new layout: {new_val} {new_idx}', 'blue'))
         if new_idx == 0:
             self._on_layout(self.window.content_rect)
@@ -682,6 +688,10 @@ class AppWindow:
             self.panel.frame     = gui.Rect(r.width - panel_width, r.y, panel_width, r.height)
         else:
             raise ValueError(f'Unexpected value')
+
+    def _on_layout_radio_choice(self, idx):
+        print(pcolor(f'  > new idx: {idx}', 'blue'))
+        self._on_layout_combo_choice('trick', idx)
 
     def _on_close(self):
         self.is_done = True
