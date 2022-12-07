@@ -316,6 +316,7 @@ class AppWindow:
     MENU_SHOW_COORDINATE = 43
     MENU_SHOW_LABEL3D    = 44
     MENU_DEBUG_VIEWPOINT = 51
+    MENU_DEBUG_STEP      = 52
     MENU_DEMO_SCREENSHOT = 61
 
     def __init__(self, data):
@@ -440,6 +441,11 @@ class AppWindow:
         self.window.set_on_close(self._on_close)
 
         # 3D SceneWidget Grid
+        self.widget3d_clear = gui.SceneWidget()
+        self.widget3d_clear.scene = rendering.Open3DScene(self.window.renderer)
+        self.window.add_child(self.widget3d_clear)
+        self.widget3d_clear.scene.set_background([0.2, 0.2, 0.2, 1.0])
+
         self.widget3d_top_left = gui.SceneWidget()
         self.widget3d_top_left.scene = rendering.Open3DScene(self.window.renderer)
         self.window.add_child(self.widget3d_top_left)
@@ -510,6 +516,12 @@ class AppWindow:
         self.widget3d_bottom_right.scene.show_skybox(True)
         self.widget3d_bottom_right.scene.set_background([0.5, 0.5, 0.5, 1.0])
         self._on_menu_reset_viewport()
+
+        # set background
+        self.widget3d_top_left.scene.set_background([0.5, 0.5, 1.0, 1.0])
+        self.widget3d_top_right.scene.set_background([0.5, 0.5, 1.0, 1.0])
+        self.widget3d_bottom_left.scene.set_background([0.5, 0.5, 1.0, 1.0])
+        self.widget3d_bottom_right.scene.set_background([0.5, 0.5, 1.0, 1.0])
 
         # debug:
         logger.info(f'  I> widget3d.bg_color:              {self.widget3d_top_left.scene.background_color}')
@@ -605,6 +617,7 @@ class AppWindow:
             # debug
             debug_menu = gui.Menu()
             debug_menu.add_item("Print Viewpoint",         AppWindow.MENU_DEBUG_VIEWPOINT)
+            debug_menu.add_item("Step",                    AppWindow.MENU_DEBUG_STEP)
 
             # demo
             demo_menu = gui.Menu()
@@ -629,6 +642,7 @@ class AppWindow:
         self.window.set_on_menu_item_activated(AppWindow.MENU_SHOW_POINTCLOUD, self._on_menu_show_pointcloud)
         self.window.set_on_menu_item_activated(AppWindow.MENU_SHOW_LABEL3D,    self._on_menu_show_label3d)
         self.window.set_on_menu_item_activated(AppWindow.MENU_DEBUG_VIEWPOINT, self._on_menu_debug_viewpoint)
+        self.window.set_on_menu_item_activated(AppWindow.MENU_DEBUG_STEP,      self._on_menu_debug_step)
         self.window.set_on_menu_item_activated(AppWindow.MENU_DEMO_SCREENSHOT, self._on_menu_demo_screenshot)
 
     def _on_layout(self, layout_context):
@@ -638,6 +652,9 @@ class AppWindow:
         panel_width = int(r.width * 0.30)
         h_3d = (r.height - 3*gap) / 2
         w_3d = (r.width - 3*gap - panel_width) / 2
+
+        # clear
+        self.widget3d_clear.frame = gui.Rect(r.x, r.y, r.width-panel_width, r.height)
 
         # 3D
         self.widget3d_top_left.frame     = gui.Rect(r.x+gap, r.y+gap, w_3d, h_3d)
@@ -712,6 +729,9 @@ class AppWindow:
         print(pcolor(f'=== view_mat ===', 'blue'))
         print(f'{view_mat}')
 
+    def _on_menu_debug_step(self):
+        print(pcolor(f"_on_menu_debug_step(..)", 'red'))
+
     def _on_menu_demo_screenshot(self):
         self.config_demo_screenshot = not self.config_demo_screenshot
         gui.Application.instance.menubar.set_checked(AppWindow.MENU_DEMO_SCREENSHOT, self.config_demo_screenshot)
@@ -781,6 +801,7 @@ class AppWindow:
                 if self.config_show_label3d:
                     for box_id, box_lineset in enumerate(boxes3d):
                         self.widget3d_top_left.scene.add_geometry(f'bbox-{box_id:03d}', box_lineset, self.unlit_line)
+                        self.widget3d_top_right.scene.add_geometry(f'bbox-{box_id:03d}', box_lineset, self.unlit_line)
                         self.widget3d_bottom_left.scene.add_geometry(f'bbox-{box_id:03d}', box_lineset, self.unlit_line)
 
                 self.widget3d_bottom_right.scene.add_geometry('mesh', self.mesh[0], self.lit)
