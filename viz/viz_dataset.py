@@ -24,6 +24,8 @@ References
         https://github.com/isl-org/Open3D/issues/999#issuecomment-720839907
     Open3D example - video.py
         https://github.com/isl-org/Open3D/blob/master/examples/python/visualization/video.py
+    Open3D-ML / ml3d / vis / visualizer.py
+        https://github.com/isl-org/Open3D-ML/blob/master/ml3d/vis/visualizer.py
     Surface reconstruction
         http://www.open3d.org/docs/release/tutorial/geometry/surface_reconstruction.html
     Update geometry using open3d.visualization.rendering.Open3DScene
@@ -65,6 +67,11 @@ if has_ml3d:
     from open3d.ml.vis import Colormap
 else:
     print(colored(f'>>> no _ml3d <<<', 'red'))
+    try:
+        from ml3d_vis.colormap import Colormap
+    except ImportError:
+        raise ImportError('Fail to import Colormap')
+    has_ml3d = True
 
 
 isLinux   = (platform.system() == "Linux")
@@ -728,7 +735,7 @@ class AppWindow:
         gui.Application.instance.menubar.set_checked(AppWindow.MENU_SHOW_LABEL3D, self.config_show_label3d)
 
     def _on_menu_debug_viewpoint(self):
-        # todo: manually find the best viewpoint
+        # TODO: manually find the best viewpoint
         #       ref: https://github.com/isl-org/Open3D/issues/1483#issuecomment-582121615
         model_mat = self.widget3d_top_left.scene.camera.get_model_matrix()
         proj_mat = self.widget3d_top_left.scene.camera.get_projection_matrix()

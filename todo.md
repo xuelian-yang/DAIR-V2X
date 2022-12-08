@@ -195,6 +195,11 @@ pip install -U pip -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirr
   - [x] ~~remove point_normal and reuse point~~
     - open3d has open3d.geometry.TriangleMesh.create_from_point_cloud_ball_pivoting(pcd, radii), but `doesn't have` open3d.t.geometry.TriangleMesh.create_from_point_cloud_ball_pivoting(pcd, radii)
   - [ ] manually find the best viewport
+- bug:
+  - [x] rendering point cloud with intensity on Windows
+    - [./viz/ml3d_vis/colormap.py](https://github.com/isl-org/Open3D-ML/blob/master/ml3d/vis/colormap.py)
+  - [ ] Segmentation fault (core dumped)
+  - [ ] increasing entity number - `[entity=32390, primitive @ 0] missing required attributes (0xd), declared=0x5`
 
 # References
 
