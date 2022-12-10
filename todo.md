@@ -33,6 +33,12 @@ pip install pillow
 pip install pyscreenshot
 pip install termcolor
 
+git clone --recursive git@github.com:klintan/pypcd.git
+cd pypcd
+python setup.py install
+
+cd ..
+
 git clone --recursive git@github.com:xuelian-yang/DAIR-V2X.git
 cd DAIR-V2X
 git checkout demo

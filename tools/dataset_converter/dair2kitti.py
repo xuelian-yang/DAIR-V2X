@@ -1,10 +1,15 @@
 import argparse
+import platform
+from termcolor import colored
 import os
+import os.path as osp
 from gen_kitti.label_lidarcoord_to_cameracoord import gen_lidar2cam
 from gen_kitti.label_json2kitti import json2kitti, rewrite_label, label_filter
 from gen_kitti.gen_calib2kitti import gen_calib2kitti
 from gen_kitti.gen_ImageSets_from_split_data import gen_ImageSet_from_split_data
 from gen_kitti.utils import pcd2bin
+
+isLinux = (platform.system() == "Linux")
 
 parser = argparse.ArgumentParser("Generate the Kitti Format Data")
 parser.add_argument("--source-root", type=str, default="data/single-vehicle-side", help="Raw data root about DAIR-V2X.")
@@ -34,16 +39,30 @@ def mdkir_kitti(target_root):
     if not os.path.exists(target_root):
         os.makedirs(target_root)
 
-    os.system("mkdir -p %s/training" % target_root)
-    os.system("mkdir -p %s/training/calib" % target_root)
-    os.system("mkdir -p %s/training/label_2" % target_root)
-    os.system("mkdir -p %s/testing" % target_root)
-    os.system("mkdir -p %s/ImageSets" % target_root)
+    if isLinux:
+        os.system("mkdir -p %s/training" % target_root)
+        os.system("mkdir -p %s/training/calib" % target_root)
+        os.system("mkdir -p %s/training/label_2" % target_root)
+        os.system("mkdir -p %s/testing" % target_root)
+        os.system("mkdir -p %s/ImageSets" % target_root)
+    else:
+        print(colored(f'mkdir "{target_root}/training"', 'yellow'))
+        os.system(f'mkdir "{target_root}/training"')
+        os.system(f'mkdir "{target_root}/training/calib"')
+        os.system(f'mkdir "{target_root}/training/label_2"')
+        os.system(f'mkdir "{target_root}/testing"')
+        os.system(f'mkdir "{target_root}/ImageSets"')
 
 
 def rawdata_copy(source_root, target_root):
-    os.system("cp -r %s/image %s/training/image_2" % (source_root, target_root))
-    os.system("cp -r %s/velodyne %s/training" % (source_root, target_root))
+    if isLinux:
+        os.system("cp -r %s/image %s/training/image_2" % (source_root, target_root))
+        os.system("cp -r %s/velodyne %s/training" % (source_root, target_root))
+    else:
+        print(colored(f'start rawdata_copy ..', 'yellow'))
+        os.system(f'echo d | xcopy /q /s /y "{source_root}/image" "{target_root}/training/image_2"')
+        print(f'echo d | xcopy /q /s /y "{source_root}/image" "{target_root}/training/image_2"')
+        os.system(f'echo d | xcopy /q /s /y "{source_root}/velodyne" "{target_root}/training/velodyne"')
 
 
 def kitti_pcd2bin(target_root):
@@ -57,6 +76,17 @@ def kitti_pcd2bin(target_root):
 
 
 if __name__ == "__main__":
+    """
+    # Windows
+    set data_root=D:/0-DAIR-V2X-Dataset/DAIR-V2X-C-Example/cooperative-vehicle-infrastructure-example
+    python tools/dataset_converter/dair2kitti.py ^
+        --source-root %data_root%/infrastructure-side ^
+        --target-root %data_root%/infrastructure-side-point-cloud-kitti ^
+        --split-path ../../data/split_datas/example-cooperative-split-data.json ^
+        --label-type lidar ^
+        --sensor-view infrastructure ^
+        --no-classmerge
+    """
     print("================ Start to Convert ================")
     args = parser.parse_args()
     source_root = args.source_root
@@ -69,10 +99,16 @@ if __name__ == "__main__":
 
     print("================ Start to Generate Label ================")
     temp_root = args.temp_root
+    temp_root = os.path.abspath(temp_root)
     label_type = args.label_type
     no_classmerge = args.no_classmerge
-    os.system("mkdir -p %s" % temp_root)
-    os.system("rm -rf %s/*" % temp_root)
+    if isLinux:
+        os.system("mkdir -p %s" % temp_root)
+        os.system("rm -rf %s/*" % temp_root)
+    else:
+        print(colored(f'mkdir "{temp_root}"', 'yellow'))
+        os.system(f'mkdir "{temp_root}"')
+        os.system(f'echo y | rmdir /s "{temp_root}"')
     gen_lidar2cam(source_root, temp_root, label_type=label_type)
 
     json_root = os.path.join(temp_root, "label", label_type)
@@ -82,7 +118,10 @@ if __name__ == "__main__":
         rewrite_label(kitti_label_root)
     label_filter(kitti_label_root)
 
-    os.system("rm -rf %s" % temp_root)
+    if isLinux:
+        os.system("rm -rf %s" % temp_root)
+    else:
+        os.system(f'echo y | rmdir /s "{temp_root}"')
 
     print("================ Start to Generate Calibration Files ================")
     sensor_view = args.sensor_view
@@ -95,6 +134,6 @@ if __name__ == "__main__":
     gen_calib2kitti(path_camera_intrinsic, path_lidar_to_camera, path_calib)
 
     print("================ Start to Generate ImageSet Files ================")
-    split_json_path = args.split_path
+    split_json_path = osp.join(osp.dirname(osp.abspath(__file__)), args.split_path)
     ImageSets_path = os.path.join(target_root, "ImageSets")
     gen_ImageSet_from_split_data(ImageSets_path, split_json_path, sensor_view)

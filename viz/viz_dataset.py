@@ -80,6 +80,7 @@ isWindows = (platform.system() == "Windows")
 
 logger = logging.getLogger(__name__)
 g_time_beg = time.time()
+g_frame_id = 0
 
 name2id = {
     "car": 2,
@@ -333,7 +334,7 @@ class AppWindow:
         self.config_show_animation  = True
         self.config_show_pointcloud = True
         self.config_show_coordinate = True
-        self.config_show_label3d    = True
+        self.config_show_label3d    = False
         self.config_demo_screenshot = False
 
         # Screenshots to GIF
@@ -797,6 +798,9 @@ class AppWindow:
                     self.paths_screenshot.append(save_name)
 
             def update():
+                global g_frame_id
+                print(colored(f'    >>> g_frame_id: {g_frame_id:8d}', 'magenta'))
+                g_frame_id += 1
                 # self.image_raw_widget.update_image(image_raw_frame)
                 self.image_label_widget.update_image(image_label_frame)
 
