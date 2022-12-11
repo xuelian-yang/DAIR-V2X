@@ -6,10 +6,13 @@
 - [setup env](#setup-env)
 - [build open3d with OPEN3D\_ML from source (Linux)](#build-open3d-with-open3d_ml-from-source-linux)
 - [build open3d with OPEN3D\_ML from source (Windows)](#build-open3d-with-open3d_ml-from-source-windows)
+- [ubuntu20.04 tsinghua source](#ubuntu2004-tsinghua-source)
 - [Env](#env)
 - [Check Label](#check-label)
 - [Export Video/GIF](#export-videogif)
 - [Visualize 3D Point Cloud Label with Open3D](#visualize-3d-point-cloud-label-with-open3d)
+- [setup WSL2\_ubuntu](#setup-wsl2_ubuntu)
+- [nvidia related](#nvidia-related)
 - [References](#references)
 
 <!-- ========== ========== ========== ========== ========== -->
@@ -49,6 +52,18 @@ python viz/viz_dataset.py
 # build open3d with OPEN3D_ML from source (Linux)
 
 ```bash
+# CMake >= 3.20
+sudo apt install rar unrar
+sudo apt install libssl-dev
+cd /tmp
+wget https://github.com/Kitware/CMake/releases/download/v3.20.0/cmake-3.20.0.tar.gz
+tar -zxvf cmake-3.20.0.tar.gz
+cd cmake-3.20.0/
+sudo ./bootstrap
+make
+sudo make install
+cmake --version
+
 # http://www.open3d.org/docs/release/compilation.html
 git clone --recursive git@github.com:isl-org/Open3D.git
 cd Open3D
@@ -57,6 +72,8 @@ bash util/install_deps_ubuntu.sh
 which python
 mkdir build
 cd build
+
+# @ubuntu_desktop
 cmake -DBUILD_CUDA_MODULE=ON \
       -DGLIBCXX_USE_CXX11_ABI=OFF \
       -DBUILD_PYTORCH_OPS=ON \
@@ -66,10 +83,19 @@ cmake -DBUILD_CUDA_MODULE=ON \
       -DOPEN3D_ML_ROOT=/mnt/datax/github-install/Open3D-ML \
       ..
 
+# @WSL2_ubuntu
+cmake -DBUILD_CUDA_MODULE=ON \
+      -DGLIBCXX_USE_CXX11_ABI=OFF \
+      -DBUILD_PYTORCH_OPS=ON \
+      -DBUILD_TENSORFLOW_OPS=ON \
+      -DBUNDLE_OPEN3D_ML=ON \
+      -DPython3_ROOT=/home/gamma/anaconda3/envs/o3d/bin/python \
+      -DOPEN3D_ML_ROOT=/mnt/d/0-home-of-ubuntu-wsl/Open3D-ML \
+      ..
+
 make -j install-pip-package
 
 python -c "import open3d"
-
 python -c "import open3d.ml.torch as ml3d"
 python -c "import open3d.ml.tf as ml3d"
 ```
@@ -100,6 +126,19 @@ cmake --build . --config Release --target ALL_BUILD
 cmake --build . --config Release --target install-pip-package
 
 python -c "import open3d; print(open3d)"
+```
+
+# ubuntu20.04 tsinghua source
+
+```bash
+deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal main restricted universe multiverse
+# deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal main restricted universe multiverse
+deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal-updates main restricted universe multiverse
+# deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal-updates main restricted universe multiverse
+deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal-backports main restricted universe multiverse
+# deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal-backports main restricted universe multiverse
+deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal-security main restricted universe multiverse
+# deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ focal-security main restricted universe multiverse multiverse
 ```
 
 # Env
@@ -206,6 +245,27 @@ pip install -U pip -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirr
     - [./viz/ml3d_vis/colormap.py](https://github.com/isl-org/Open3D-ML/blob/master/ml3d/vis/colormap.py)
   - [ ] Segmentation fault (core dumped)
   - [ ] increasing entity number - `[entity=32390, primitive @ 0] missing required attributes (0xd), declared=0x5`
+
+# setup WSL2_ubuntu
+
+- problems:
+  - NO_PUBKEY A4B469963BF863CC
+    - [sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv A4B469963BF863CC](https://blog.csdn.net/act50/article/details/124543649)
+  - [install cuda](https://github.com/Christophe-Foyer/darknet_wsl_cuda_install_scripts/blob/main/Darknet_WSL_CUDA.sh)
+    ```bash
+    sudo apt-key adv --fetch-keys http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/7fa2af80.pub
+    sudo sh -c 'echo "deb http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64 /" > /etc/apt/sources.list.d/cuda.list'
+    sudo apt update
+    sudo apt install -y cuda-toolkit-12-0
+    sudo apt install -y nvidia-cuda-toolkit
+    nvcc -V
+    ```
+  - [Pytorch+cuda installation script for Ubuntu 20.04 LTS WSL](https://gist.github.com/Otteri/233a058a4ec5d31dc76bbcb50f7862dd)
+
+# nvidia related
+
+- [nvidia driver](https://www.nvidia.com/Download/index.aspx?lang=en-us)
+- [nvidia cuda](https://developer.nvidia.com/cuda-downloads)
 
 # References
 
