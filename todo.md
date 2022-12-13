@@ -267,6 +267,17 @@ pip install -U pip -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirr
 - [nvidia driver](https://www.nvidia.com/Download/index.aspx?lang=en-us)
 - [nvidia cuda](https://developer.nvidia.com/cuda-downloads)
 
+```bash
+sudo vim ~/.bashrc 
+
+if [ -d "/usr/local/cuda-11.6/bin/" ]; then
+  export PATH=/usr/local/cuda-11.6/bin${PATH:+:${PATH}}
+  export LD_LIBRARY_PATH=/usr/local/cuda-11.6/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+fi
+
+source ~/.bashrc
+```
+
 # References
 
 - [open-v2x/lidar](https://github.com/open-v2x/lidar)
