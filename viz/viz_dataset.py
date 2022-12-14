@@ -119,10 +119,6 @@ color_superclass = {
 }
 
 
-def pcolor(string, color, on_color=None, attrs=None):
-    return colored(string, color, on_color, attrs)
-
-
 def setup_log():
     medium_format = (
         '[%(asctime)s] %(levelname)s : %(filename)s[%(lineno)d] %(funcName)s'
@@ -130,8 +126,8 @@ def setup_log():
     )
 
     dt_now = datetime.datetime.now()
-    log_name = __file__.replace('.py', '.log')
-    get_log_file = osp.join(osp.dirname(__file__), log_name)
+    log_name = osp.basename(__file__).replace('.py', '.log')
+    get_log_file = osp.join(osp.dirname(osp.abspath(__file__)), log_name)
     logging.basicConfig(
         filename=get_log_file,
         filemode='w',
@@ -139,7 +135,7 @@ def setup_log():
         format=medium_format
     )
     logging.info('@{} created at {}'.format(get_log_file, dt_now))
-    print(pcolor('@{} created at {}'.format(get_log_file, dt_now), 'magenta'))
+    print(colored('@{} created at {}'.format(get_log_file, dt_now), 'magenta'))
 
 
 class PathConfig:
@@ -372,7 +368,7 @@ class AppWindow:
 
             min_val = np.min(cloud_t_xyzi.point.positions.numpy(), axis=0)
             max_val = np.max(cloud_t_xyzi.point.positions.numpy(), axis=0)
-            # print(pcolor(f'min_val: {type(min_val)} {min_val.shape} {min_val.dtype}', 'red'))
+            # print(colored(f'min_val: {type(min_val)} {min_val.shape} {min_val.dtype}', 'red'))
             for i in range(min_val.shape[0]):
                 if xyz_range[i, 0] > min_val[i]:
                     xyz_range[i, 0] = min_val[i]
@@ -439,13 +435,13 @@ class AppWindow:
             for item in label3d:
                 label3d_type_set.add(item["type"])
 
-        print(pcolor(f'> label2d_type_set: {label2d_type_set}', 'yellow'))
-        print(pcolor(f'> label3d_type_set: {label3d_type_set}', 'yellow'))
-        print(pcolor(f'Scene BoundingBox:', 'red'))
-        print(pcolor(f'  > x_range: [{xyz_range[0, 0]:8.3f}, {xyz_range[0, 1]:8.3f}]', 'blue'))
-        print(pcolor(f'  > y_range: [{xyz_range[1, 0]:8.3f}, {xyz_range[1, 1]:8.3f}]', 'blue'))
-        print(pcolor(f'  > z_range: [{xyz_range[2, 0]:8.3f}, {xyz_range[2, 1]:8.3f}]', 'blue'))
-        print(pcolor(f'>> loading data of {len(self.pcds_t_xyzi)} frames elapsed {time.time() - g_time_beg:.3f} seconds', 'red'))
+        print(colored(f'> label2d_type_set: {label2d_type_set}', 'yellow'))
+        print(colored(f'> label3d_type_set: {label3d_type_set}', 'yellow'))
+        print(colored(f'Scene BoundingBox:', 'red'))
+        print(colored(f'  > x_range: [{xyz_range[0, 0]:8.3f}, {xyz_range[0, 1]:8.3f}]', 'blue'))
+        print(colored(f'  > y_range: [{xyz_range[1, 0]:8.3f}, {xyz_range[1, 1]:8.3f}]', 'blue'))
+        print(colored(f'  > z_range: [{xyz_range[2, 0]:8.3f}, {xyz_range[2, 1]:8.3f}]', 'blue'))
+        print(colored(f'>> loading data of {len(self.pcds_t_xyzi)} frames elapsed {time.time() - g_time_beg:.3f} seconds', 'red'))
 
     def _init_ui(self):
         # main window
@@ -664,7 +660,7 @@ class AppWindow:
         self.window.set_on_menu_item_activated(AppWindow.MENU_DEMO_SCREENSHOT, self._on_menu_demo_screenshot)
 
     def _on_layout(self, layout_context):
-        print(pcolor(f'layout_context: {type(layout_context)}', 'yellow'))
+        print(colored(f'layout_context: {type(layout_context)}', 'yellow'))
         r    = self.window.content_rect
         gap  = 3
         panel_width = int(r.width * 0.30)
@@ -742,21 +738,21 @@ class AppWindow:
         proj_mat = self.widget3d_top_left.scene.camera.get_projection_matrix()
         view_mat = self.widget3d_top_left.scene.camera.get_view_matrix()
 
-        print(pcolor(f'=== model_mat ===', 'blue'))
+        print(colored(f'=== model_mat ===', 'blue'))
         print(f'{model_mat}')
-        print(pcolor(f'=== proj_mat ===', 'blue'))
+        print(colored(f'=== proj_mat ===', 'blue'))
         print(f'{proj_mat}')
-        print(pcolor(f'=== view_mat ===', 'blue'))
+        print(colored(f'=== view_mat ===', 'blue'))
         print(f'{view_mat}')
 
     def _on_menu_debug_step(self):
-        print(pcolor(f"_on_menu_debug_step(..)", 'red'))
+        print(colored(f"_on_menu_debug_step(..)", 'red'))
 
     def _on_menu_demo_screenshot(self):
         self.config_demo_screenshot = not self.config_demo_screenshot
         gui.Application.instance.menubar.set_checked(AppWindow.MENU_DEMO_SCREENSHOT, self.config_demo_screenshot)
         win_sz = self.window.content_rect
-        print(pcolor(f'content_rect: {win_sz.x} {win_sz.y} {win_sz.width} {win_sz.height}', 'yellow'))
+        print(colored(f'content_rect: {win_sz.x} {win_sz.y} {win_sz.width} {win_sz.height}', 'yellow'))
 
         if not self.config_demo_screenshot:
             self._create_gif()
@@ -767,7 +763,7 @@ class AppWindow:
         for item in self.paths_screenshot:
             new_frame = PIL.Image.open(item)
             frames.append(new_frame)
-        print(pcolor(f'writing {gif_name}', 'red'))
+        print(colored(f'writing {gif_name}', 'red'))
         frames[0].save(gif_name, format='GIF', append_images=frames[1:], save_all=True, duration=100, loop=0, comment=b'DAIR V2X Visualization')
         self.paths_screenshot = []
 
@@ -792,7 +788,7 @@ class AppWindow:
                 win_sz = self.window.content_rect
                 screen = pyscreenshot.grab(bbox=(win_sz.x, 0, win_sz.width, win_sz.height), childprocess=False)
                 save_name = osp.join('/mnt/datax/temp', f'frame-{idx:03d}.png')
-                print(pcolor(f'  write {save_name}', 'blue'))
+                print(colored(f'  write {save_name}', 'blue'))
                 screen.save(save_name)
                 if save_name not in self.paths_screenshot:
                     self.paths_screenshot.append(save_name)
@@ -861,8 +857,8 @@ def debug_analysis_pcd():
     veh_pcd_path = osp.join(str_root, 'vehicle-side/velodyne/015344.pcd')
     inf_pcd = pypcd.PointCloud.from_path(inf_pcd_path)
     veh_pcd = pypcd.PointCloud.from_path(veh_pcd_path)
-    print(pcolor(f'inf_pcd: {type(inf_pcd)} {type(inf_pcd.pc_data)} {inf_pcd.pc_data.shape} {inf_pcd.fields}', 'cyan'))
-    print(pcolor(f'veh_pcd: {type(veh_pcd)} {type(veh_pcd.pc_data)} {veh_pcd.pc_data.shape} {veh_pcd.fields}', 'blue'))
+    print(colored(f'inf_pcd: {type(inf_pcd)} {type(inf_pcd.pc_data)} {inf_pcd.pc_data.shape} {inf_pcd.fields}', 'cyan'))
+    print(colored(f'veh_pcd: {type(veh_pcd)} {type(veh_pcd.pc_data)} {veh_pcd.pc_data.shape} {veh_pcd.fields}', 'blue'))
 
 
 def debug_create_gif():
@@ -874,14 +870,14 @@ def debug_create_gif():
     for item in files:
         new_frame = PIL.Image.open(item)
         frames.append(new_frame)
-    print(pcolor(f'writing {save_fig}', 'red'))
+    print(colored(f'writing {save_fig}', 'red'))
     frames[0].save(save_fig, format='GIF', append_images=frames[1:], save_all=True, duration=200, loop=0, comment=b'DAIR V2X Visualization')
 
 
 if __name__ == "__main__":
-    print(pcolor(f'sys.version:        {sys.version}', 'yellow'))
-    print(pcolor(f'cv2.__version__:    {cv2.__version__}', 'yellow'))
-    print(pcolor(f'open3d.__version__: {o3d.__version__}\n', 'yellow'))
+    print(colored(f'sys.version:        {sys.version}', 'yellow'))
+    print(colored(f'cv2.__version__:    {cv2.__version__}', 'yellow'))
+    print(colored(f'open3d.__version__: {o3d.__version__}\n', 'yellow'))
 
     o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Error)
 
