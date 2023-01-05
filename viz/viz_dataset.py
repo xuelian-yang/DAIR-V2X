@@ -287,7 +287,8 @@ def calc_point_color(cloud, image, intr, extr_v2c):
     v_in = np.where((uv_origin[:, 0] >= 0) & (uv_origin[:, 0] < w) &
                     (uv_origin[:, 1] >= 0) & (uv_origin[:, 1] < h), True, False)
 
-    cloud.point.colors  = o3d.core.Tensor.zeros(cloud.point.positions.shape, cloud.point.positions.dtype, cloud.point.positions.device)
+    # cloud.point.colors  = o3d.core.Tensor.zeros(cloud.point.positions.shape, cloud.point.positions.dtype, cloud.point.positions.device)
+    cloud.point.colors  = o3d.core.Tensor.full(cloud.point.positions.shape, 0.05, cloud.point.positions.dtype, cloud.point.positions.device)
     # cloud.point.colors[v_in] = np.array([0.9, 0.2, 0.3])
 
     valid_uv_origin = uv_origin[v_in]
@@ -327,6 +328,28 @@ def make_rainbow_ex():
         Colormap.Point(0.800, [1.0, 0.0, 0.0]),
         Colormap.Point(0.900, [1.0, 0.0, 0.5]),
         Colormap.Point(1.000, [1.0, 0.0, 1.0])
+    ])
+
+
+def make_colorbar_for_z(min_z, max_z):
+    mul = 1.0 / (max_z - min_z)
+    v_0 = (-0.5 - min_z) * mul
+    v_1 = (-0.05 - min_z) * mul
+    v_2 = (0.1 - min_z) * mul
+    v_3 = (0.5 - min_z) * mul
+    v_4 = (1.0 - min_z) * mul
+    v_5 = (2.0 - min_z) * mul
+    v_6 = (5.0 - min_z) * mul
+    return Colormap([
+        Colormap.Point(0.000, [0.0, 0.0, 1.0]),
+        Colormap.Point(v_0,   [0.0, 0.5, 1.0]),
+        Colormap.Point(v_1,   [0.0, 1.0, 1.0]),
+        Colormap.Point(v_2,   [0.0, 1.0, 0.5]),
+        Colormap.Point(v_3,   [0.0, 1.0, 0.0]),
+        Colormap.Point(v_4,   [0.5, 1.0, 0.0]),
+        Colormap.Point(v_5,   [1.0, 1.0, 0.0]),
+        Colormap.Point(v_6,   [1.0, 0.5, 0.0]),
+        Colormap.Point(1.000, [1.0, 0.0, 0.0])
     ])
 
 
@@ -371,8 +394,8 @@ class AppWindow:
         self.images_raw      = []
         self.images_label2d  = []
         self.pcds_t_xyzi_raw = []
-        self.pcds_t_xyzi     = []
-        self.pcds_t_xyzz     = []
+        self.pcds_t_xyzi     = [] # intensity as visualization scalar
+        self.pcds_t_xyzz     = [] # z value as visualization scalar
         self.pcds_t_xyzrgbi  = []
         self.boxes_label3d   = []
         self.mesh            = []
@@ -382,6 +405,8 @@ class AppWindow:
         xyz_range        = np.zeros((3, 2), dtype=np.float32)
         xyz_range[:, 0]  = 1000
         xyz_range[:, 1]  = -1000
+        self.z_min = -34.0
+        self.z_max = 70.0
 
         for framd_id, data_frame in enumerate(data.read_frames()):
             image, cloud_t_xyzi, label2d, label3d, intr, extr_v2c, extr_v2w, cloud_xyz = data_frame
@@ -390,7 +415,6 @@ class AppWindow:
 
             min_val = np.min(cloud_t_xyzi.point.positions.numpy(), axis=0)
             max_val = np.max(cloud_t_xyzi.point.positions.numpy(), axis=0)
-            # print(colored(f'min_val: {type(min_val)} {min_val.shape} {min_val.dtype}', 'red'))
             for i in range(min_val.shape[0]):
                 if xyz_range[i, 0] > min_val[i]:
                     xyz_range[i, 0] = min_val[i]
@@ -402,7 +426,7 @@ class AppWindow:
             t_xyzi.point['__visualization_scalar'] = t_xyzi.point.intensity
             self.pcds_t_xyzi.append(t_xyzi)
             t_xyzz = cloud_t_xyzi.clone()
-            t_xyzz.point['__visualization_scalar'] = t_xyzz.point.positions.numpy()[:, 2]
+            t_xyzz.point['__visualization_scalar'] = (t_xyzz.point.positions.numpy()[:, 2] - self.z_min) / (self.z_max - self.z_min)
             self.pcds_t_xyzz.append(t_xyzz)
 
             t_xyzrgbi = cloud_t_xyzi.clone()
@@ -526,11 +550,12 @@ class AppWindow:
                 Colormap.Point(0.0, [0.0, 0.0, 0.0]),
                 Colormap.Point(1.0, [1.0, 0.0, 0.0])
             ])
+            colormap = make_colorbar_for_z(self.z_min, self.z_max)
             colormap = list(rendering.Gradient.Point(pt.value, pt.color + [1.0]) for pt in colormap.points)
 
             self.unlit_height.shader = "unlitGradient" # https://github.com/isl-org/Open3D/blob/v0.16.0/cpp/open3d/visualization/gui/Materials/unlitGradient.mat
-            self.unlit_height.scalar_min = -1.0
-            self.unlit_height.scalar_max =  3.0
+            self.unlit_height.scalar_min = 0.0
+            self.unlit_height.scalar_max = 1.0
             self.unlit_height.gradient = rendering.Gradient(colormap)
             self.unlit_height.gradient.mode = rendering.Gradient.GRADIENT
 
@@ -729,7 +754,7 @@ class AppWindow:
         gui.Application.instance.quit()
 
     def _on_menu_reset_viewport(self):
-        self.widget3d_top_left.scene.camera.look_at([70,0,0], [-30,0,50], [100,0,50]) # look_at(center, eye, up)
+        self.widget3d_top_left.scene.camera.look_at([70,0,0], [-10,0,50], [100,0,50]) # look_at(center, eye, up)
         self.widget3d_bottom_left.scene.camera.look_at([70,0,0], [-30,0,50], [100,0,50])
 
         self.widget3d_top_right.scene.camera.look_at([70,0,0], [-30,0,50], [100,0,50])
