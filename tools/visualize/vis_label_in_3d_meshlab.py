@@ -133,7 +133,5 @@ if __name__ == '__main__':
         plot_label_pcd(args)
 
     time_end_vis_3d_meshlab = time.time()
-    logging.warning(f'vis_label_in_3d.py elapsed {time_end_vis_3d_meshlab - time_beg_vis_3d_meshlab} seconds')
-    print(pcolor(f'vis_label_in_3d.py elapsed {time_end_vis_3d_meshlab - time_beg_vis_3d_meshlab} seconds', 'yellow'))
-
-
+    logging.warning(f'vis_label_in_3d.py elapsed {time_end_vis_3d_meshlab - time_beg_vis_3d_meshlab:.6f} seconds')
+    print(pcolor(f'vis_label_in_3d.py elapsed {time_end_vis_3d_meshlab - time_beg_vis_3d_meshlab:.6f} seconds', 'yellow'))

@@ -308,6 +308,28 @@ def calc_point_color(cloud, image, intr, extr_v2c):
 
     return cloud
 
+
+def make_rainbow_ex():
+    """
+    References
+    ----------
+    https://www.robosense.ai/en/RS-LiDAR-M1
+    """
+    return Colormap([
+        Colormap.Point(0.000, [0.0, 0.0, 1.0]),
+        Colormap.Point(0.100, [0.0, 0.5, 1.0]),
+        Colormap.Point(0.200, [0.0, 1.0, 1.0]),
+        Colormap.Point(0.300, [0.0, 1.0, 0.5]),
+        Colormap.Point(0.400, [0.0, 1.0, 0.0]),
+        Colormap.Point(0.500, [0.5, 1.0, 0.0]),
+        Colormap.Point(0.600, [1.0, 1.0, 0.0]),
+        Colormap.Point(0.700, [1.0, 0.5, 0.0]),
+        Colormap.Point(0.800, [1.0, 0.0, 0.0]),
+        Colormap.Point(0.900, [1.0, 0.0, 0.5]),
+        Colormap.Point(1.000, [1.0, 0.0, 1.0])
+    ])
+
+
 class AppWindow:
     MENU_OPEN            = 11
     MENU_EXPORT          = 12
@@ -453,7 +475,7 @@ class AppWindow:
         self.widget3d_clear = gui.SceneWidget()
         self.widget3d_clear.scene = rendering.Open3DScene(self.window.renderer)
         self.window.add_child(self.widget3d_clear)
-        self.widget3d_clear.scene.set_background([0.2, 0.2, 0.2, 1.0])
+        self.widget3d_clear.scene.set_background([0.5, 0.5, 0.5, 1.0])
 
         self.widget3d_top_left = gui.SceneWidget()
         self.widget3d_top_left.scene = rendering.Open3DScene(self.window.renderer)
@@ -486,8 +508,7 @@ class AppWindow:
         self.unlit_gradient.shader = "defaultLit"
 
         if has_ml3d:
-            # colormap = Colormap.make_rainbow()
-            colormap = Colormap.make_greyscale()
+            colormap = make_rainbow_ex()
             colormap = list(rendering.Gradient.Point(pt.value, pt.color + [1.0]) for pt in colormap.points)
 
             self.unlit_gradient.shader = "unlitGradient" # https://github.com/isl-org/Open3D/blob/v0.16.0/cpp/open3d/visualization/gui/Materials/unlitGradient.mat
@@ -523,14 +544,14 @@ class AppWindow:
         self.widget3d_bottom_right.scene.add_geometry('coord', self.coord, self.lit)
         self.widget3d_bottom_right.scene.add_geometry('mesh', self.mesh[0], self.lit)
         # self.widget3d_bottom_right.scene.show_skybox(True)
-        self.widget3d_bottom_right.scene.set_background([0.5, 0.5, 0.5, 1.0])
+        self.widget3d_bottom_right.scene.set_background([0.0, 0.0, 0.0, 1.0])
         self._on_menu_reset_viewport()
 
         # set background
-        self.widget3d_top_left.scene.set_background([0.5, 0.5, 1.0, 1.0])
-        self.widget3d_top_right.scene.set_background([0.5, 0.5, 1.0, 1.0])
-        self.widget3d_bottom_left.scene.set_background([0.5, 0.5, 1.0, 1.0])
-        self.widget3d_bottom_right.scene.set_background([0.5, 0.5, 1.0, 1.0])
+        self.widget3d_top_left.scene.set_background([0.0, 0.0, 0.0, 1.0])
+        self.widget3d_top_right.scene.set_background([0.0, 0.0, 0.0, 1.0])
+        self.widget3d_bottom_left.scene.set_background([0.0, 0.0, 0.0, 1.0])
+        self.widget3d_bottom_right.scene.set_background([0.0, 0.0, 0.0, 1.0])
 
         # debug:
         logger.info(f'  I> widget3d.bg_color:              {self.widget3d_top_left.scene.background_color}')
@@ -795,7 +816,8 @@ class AppWindow:
 
             def update():
                 global g_frame_id
-                print(colored(f'    >>> g_frame_id: {g_frame_id:8d}', 'magenta'))
+                if g_frame_id % 100 == 0:
+                    print(colored(f'    >>> g_frame_id: {g_frame_id:8d}', 'magenta'))
                 g_frame_id += 1
                 # self.image_raw_widget.update_image(image_raw_frame)
                 self.image_label_widget.update_image(image_label_frame)
@@ -882,6 +904,10 @@ if __name__ == "__main__":
     o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Error)
 
     setup_log()
+    time_beg_viz_dataset = time.time()
     main()
     # debug_analysis_pcd()
     # debug_create_gif()
+    time_end_viz_dataset = time.time()
+    logger.warning(f'viz_dataset.py elapsed {time_end_viz_dataset - time_beg_viz_dataset:.6f} seconds')
+    print(colored(f'viz_dataset.py elapsed {time_end_viz_dataset - time_beg_viz_dataset:.6f} seconds', 'yellow'))
