@@ -523,6 +523,8 @@ class AppWindow:
         self.lit.shader = "defaultLit"
         self.unlit = rendering.MaterialRecord()
         self.unlit.shader = "defalutUnlit"
+        self.unlit.point_size = 0.1
+
         self.unlit_line = rendering.MaterialRecord()
         self.unlit_line.shader = "unlitLine"
         self.unlit_line.line_width = 3
@@ -530,8 +532,15 @@ class AppWindow:
         # point cloud with intensity as colormap
         self.unlit_gradient = rendering.MaterialRecord()
         self.unlit_gradient.shader = "defaultLit"
+        self.unlit_gradient.point_size = 0.1
+
+        # point cloud with height as colormap
+        self.unlit_height = rendering.MaterialRecord()
+        self.unlit_height.shader = "defaultLit"
+        self.unlit_height.point_size = 0.1
 
         if has_ml3d:
+            # unlit_gradient
             colormap = make_rainbow_ex()
             colormap = list(rendering.Gradient.Point(pt.value, pt.color + [1.0]) for pt in colormap.points)
 
@@ -541,11 +550,7 @@ class AppWindow:
             self.unlit_gradient.gradient = rendering.Gradient(colormap)
             self.unlit_gradient.gradient.mode = rendering.Gradient.GRADIENT
 
-        # point cloud with height as colormap
-        self.unlit_height = rendering.MaterialRecord()
-        self.unlit_height.shader = "defaultLit"
-
-        if has_ml3d:
+            # unlit_height
             colormap = Colormap([
                 Colormap.Point(0.0, [0.0, 0.0, 0.0]),
                 Colormap.Point(1.0, [1.0, 0.0, 0.0])
