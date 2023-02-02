@@ -22,7 +22,7 @@ from models.model_utils import Channel
 
 import datetime
 import time
-sys.path.append(osp.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+sys.path.append(osp.dirname(osp.dirname(osp.abspath(__file__))))
 from utils.setup_log import setup_log, git_info, pcolor
 
 

@@ -87,7 +87,7 @@ def git_info():
     return repo, repo.head.commit.hexsha, repo.is_dirty()
 
 
-def setup_log(log_name):
+def setup_log(log_name, same_place=False):
     # Initialize logging
     # simple_format = '%(levelname)s >>> %(message)s'
     medium_format = (
@@ -106,6 +106,19 @@ def setup_log(log_name):
     )
 
     dt_now = datetime.datetime.now()
+    if same_place:
+        log_name = log_name.replace('.py', '.log')
+        get_log_file = osp.join(osp.dirname(osp.abspath(__file__)), log_name)
+        logging.basicConfig(
+            filename=get_log_file,
+            filemode='w',
+            level=logging.INFO,
+            format=medium_format
+        )
+        logging.info('@{} created at {}'.format(get_log_file, dt_now))
+        print(colored('@{} created at {}'.format(get_log_file, dt_now), 'magenta'))
+        return
+
     minute_ex = (dt_now.minute // 10) * 10
     dt_text = f'{dt_now.year:04d}{dt_now.month:02d}{dt_now.day:02d}_{dt_now.hour:02d}-{minute_ex:02d}'
     name_tag = osp.splitext(log_name)

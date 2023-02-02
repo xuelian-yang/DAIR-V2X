@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import argparse
 import platform
 from termcolor import colored
@@ -9,7 +11,15 @@ from gen_kitti.gen_calib2kitti import gen_calib2kitti
 from gen_kitti.gen_ImageSets_from_split_data import gen_ImageSet_from_split_data
 from gen_kitti.utils import pcd2bin
 
+import logging
+import sys
+from termcolor import colored
+import time
+sys.path.append(osp.dirname(osp.dirname(osp.dirname(osp.abspath(__file__)))))
+from utils.setup_log import setup_log, git_info
+
 isLinux = (platform.system() == "Linux")
+logger = logging.getLogger(__name__)
 
 parser = argparse.ArgumentParser("Generate the Kitti Format Data")
 parser.add_argument("--source-root", type=str, default="data/single-vehicle-side", help="Raw data root about DAIR-V2X.")
@@ -38,6 +48,7 @@ parser.add_argument("--temp-root", type=str, default="./tmp_file", help="Tempora
 def mdkir_kitti(target_root):
     if not os.path.exists(target_root):
         os.makedirs(target_root)
+        logger.info(f'makedirs {target_root}')
 
     if isLinux:
         os.system("mkdir -p %s/training" % target_root)
@@ -87,6 +98,9 @@ if __name__ == "__main__":
         --sensor-view infrastructure ^
         --no-classmerge
     """
+    setup_log(osp.abspath(__file__), True)
+    time_beg_dair2kitti = time.time()
+
     print("================ Start to Convert ================")
     args = parser.parse_args()
     source_root = args.source_root
@@ -134,6 +148,11 @@ if __name__ == "__main__":
     gen_calib2kitti(path_camera_intrinsic, path_lidar_to_camera, path_calib)
 
     print("================ Start to Generate ImageSet Files ================")
-    split_json_path = osp.join(osp.dirname(osp.abspath(__file__)), args.split_path)
+    split_json_path = osp.join(osp.dirname(osp.abspath(__file__)), "../..", args.split_path)
     ImageSets_path = os.path.join(target_root, "ImageSets")
     gen_ImageSet_from_split_data(ImageSets_path, split_json_path, sensor_view)
+
+    time_end_dair2kitti = time.time()
+    logger.warning(f'dair2kitti.py elapsed {time_end_dair2kitti - time_beg_dair2kitti:.6f} seconds')
+    print(colored(f'dair2kitti.py elapsed {time_end_dair2kitti - time_beg_dair2kitti:.6f} seconds', 'yellow'))
+

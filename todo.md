@@ -35,6 +35,7 @@ pip install opencv-python
 pip install pillow
 pip install pyscreenshot
 pip install termcolor
+pip install gitpython
 
 git clone --recursive git@github.com:klintan/pypcd.git
 cd pypcd

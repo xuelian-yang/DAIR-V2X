@@ -9,3 +9,5 @@
 *.log
 /logs
 .idea
+tmp*
+single-vehicle-side-point-cloud-kitti
