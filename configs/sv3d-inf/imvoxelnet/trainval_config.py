@@ -1,7 +1,33 @@
 work_dir = './work_dirs/ss3d_inf_imvoxelnet'
 
+# version:
+# ========
+# pip list | grep -i mm
+#   mmcv-full               1.3.8
+#   mmdet                   2.14.0       ~/github/DAIR-V2X-Version/mmdetection
+#   mmdet3d                 0.17.1       /mnt/itti-dev/mmdetection3d
+#   mmsegmentation          0.14.1       ~/github/DAIR-V2X-Version/mmsegmentation
+# pip list | grep -i torch
+#   torch                   1.10.0+cu111
+#   torchaudio              0.10.0
+#   torchvision             0.11.0+cu111
+# pip list | grep -i tensor
+#   tensorboard             2.11.2
+#   tensorboard-data-server 0.6.1
+#   tensorboard-plugin-wit  1.8.1
+# pip list | grep -i setup
+#   setuptools              59.5.0
+#
+# path:
+# =====
+# /mnt/itti-dev$ tree -L 1
+#   .
+#   ├── DAIR-V2X
+#   └── mmdetection3d
+
 dataset_type = "KittiDataset"
-data_root = "../../../data/DAIR-V2X/single-infrastructure-side/"
+# data_root = "../../../data/DAIR-V2X/single-infrastructure-side/"
+data_root = "../DAIR-V2X/data/DAIR-V2X/single-infrastructure-side/"
 class_names = ["Pedestrian", "Cyclist", "Car"]
 input_modality = dict(use_lidar=False, use_camera=True)
 point_cloud_range = [0, -39.68, -3, 69.12, 39.68, 1]
