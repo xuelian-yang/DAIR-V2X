@@ -30,9 +30,11 @@ def eval_vic(args, dataset, model, evaluator):
     logging.warning(f'eval_vic(.., {type(dataset)}')
     idx = -1
     for VICFrame, label, filt in tqdm(dataset):
+        '''
         idx += 1
         if idx > 1:
             break
+        '''
         # if idx % 10 != 0:
         #     continue
         try:

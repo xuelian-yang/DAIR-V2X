@@ -1,0 +1,6 @@
+root_path=/path_to_data/DAIR-V2X
+cd ${root_path}
+cd configs/vic3d/late-fusion-pointcloud/pointpillars
+
+cp /mnt/models/AIR-THU_DAIR-V2X/configs/vic3d/late-fusion-pointcloud/pointpillars/vic3d_latefusion_inf_pointpillars_596784ad6127866fcfb286301757c949.pth ./
+cp /mnt/models/AIR-THU_DAIR-V2X/configs/vic3d/late-fusion-pointcloud/pointpillars/vic3d_latefusion_veh_pointpillars_a70fa05506bf3075583454f58b28177f.pth ./

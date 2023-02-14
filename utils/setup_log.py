@@ -108,7 +108,7 @@ def setup_log(log_name, same_place=False):
     dt_now = datetime.datetime.now()
     if same_place:
         log_name = log_name.replace('.py', '.log')
-        get_log_file = osp.join(osp.dirname(osp.abspath(__file__)), log_name)
+        get_log_file = osp.abspath(osp.join(osp.dirname(osp.abspath(__file__)), log_name))
         logging.basicConfig(
             filename=get_log_file,
             filemode='w',
@@ -126,7 +126,7 @@ def setup_log(log_name, same_place=False):
 
     new_log_name = log_name
 
-    get_log_file = osp.join(osp.dirname(__file__), f'../logs/{new_log_name}')
+    get_log_file = osp.abspath(osp.join(osp.dirname(__file__), f'../logs/{new_log_name}'))
     if not osp.exists(osp.dirname(get_log_file)):
         os.makedirs(osp.dirname(get_log_file))
 

@@ -124,7 +124,7 @@ def inference_detector(model, pcd):
     # forward the model
     with torch.no_grad():
         result = model(return_loss=False, rescale=True, **data)
-    show_result_meshlab(data, result, '/tmp/result', score_thr=0.3, show=True, snapshot=True)
+    show_result_meshlab(data, result, '/tmp/result', score_thr=0.3, show=False, snapshot=True)
     return result, data
 
 
