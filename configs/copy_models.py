@@ -5,12 +5,8 @@ import datetime
 import logging
 import os
 import os.path as osp
-import platform
 import subprocess
 from termcolor import colored
-
-isLinux   = (platform.system() == "Linux")
-isWindows = (platform.system() == "Windows")
 
 logger = logging.getLogger(__name__)
 
