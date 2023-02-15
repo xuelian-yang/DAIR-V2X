@@ -3,6 +3,8 @@ import logging
 
 logger = logging.getLogger(__name__)
 import numpy as np
+import pprint
+from termcolor import colored
 
 from dataset.dataset_utils import save_pkl, load_pkl, read_jpg
 from v2x_utils import mkdir
@@ -101,6 +103,9 @@ class SingleSide(BaseModel):
                 self.args.model_path,
                 device=self.args.device,
             )
+            print(colored(f'self.model: {type(self.model)} {type(self.model.cfg)}', 'yellow'))
+            pprint.pprint(dict(self.model.cfg))
+
             pred_dict = self.pred(frame, pred_filter)
         return pred_dict
 

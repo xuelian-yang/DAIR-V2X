@@ -57,13 +57,13 @@ def eval_vic(args, dataset, model, evaluator):
 
 
 def eval_single(args, dataset, model, evaluator):
-    logging.warnging(f'eval_single(..)')
+    logging.warning(f'eval_single(..)')
     print(colored(f'eval_single(args={type(args)}, \n\tdataset={type(dataset)}, \n\tmodel={type(model)}, \n\tevaluator={type(evaluator)})', 'yellow'))
     idx = -1
     for frame, label, filt in tqdm(dataset):
         idx += 1
-        if idx > 10:
-            break
+        # if idx > 10:
+        #     break
         pred = model(frame, filt)
         if args.sensortype == "camera":
             evaluator.add_frame(pred, label["camera"])

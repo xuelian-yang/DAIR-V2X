@@ -10,6 +10,9 @@ from mmcv.runner import load_checkpoint
 from os import path as osp
 
 from utils.setup_log import trace_logger
+import pprint
+import yaml
+from termcolor import colored
 
 from mmdet3d.core import (
     Box3DMode,
@@ -221,6 +224,11 @@ def inference_mono_3d_detector(model, image, ann_file):
     # build the data pipeline
     test_pipeline = deepcopy(cfg.data.test.pipeline)
     test_pipeline = Compose(test_pipeline)
+
+    print(colored(f'cfg: {type(cfg)}: \n\tcfg.data: {type(cfg.data)}', 'yellow'))
+    pprint.pprint(dict(cfg.data))
+    # print(colored(yaml.dump(dict(cfg.data), sort_keys=True, default_flow_style=False), 'yellow'))
+
     box_type_3d, box_mode_3d = get_box_type(cfg.data.test.box_type_3d)
     # get data info containing calib
     data_infos = mmcv.load(ann_file)

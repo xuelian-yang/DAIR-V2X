@@ -284,7 +284,7 @@ class Evaluator(object):
         logging.info(f'all_preds:    {self.all_preds}')
 
     def add_frame(self, pred, label):
-        trace_logger.warning(f'add_frame( pred=inf_id: {pred["inf_id"]}, veh_id: {pred["veh_id"]}, {pred["boxes_3d"].shape} , label={len(label["labels_3d"])} )')
+        # trace_logger.warning(f'add_frame( pred=inf_id: {pred["inf_id"]}, veh_id: {pred["veh_id"]}, {pred["boxes_3d"].shape} , label={len(label["labels_3d"])} )')
 
         for pred_class in self.pred_classes:
             for iou in iou_threshold_dict[pred_class]:
