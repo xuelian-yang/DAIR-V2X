@@ -20,25 +20,21 @@ from dataset.dataset_utils import save_pkl
 from models import SUPPROTED_MODELS
 from models.model_utils import Channel
 
-import datetime
 import time
 sys.path.append(osp.dirname(osp.dirname(osp.abspath(__file__))))
-from utils.setup_log import setup_log, git_info, pcolor
+from utils.setup_log import setup_log
+from termcolor import colored
 
 
 def eval_vic(args, dataset, model, evaluator):
     logging.warning(f'eval_vic(.., {type(dataset)}')
+    print(colored(f'eval_dic(args={type(args)}, \n\tdataset={type(dataset)}, \n\tmodel={type(model)}, \n\tevaluator={type(evaluator)})', 'yellow'))
     idx = -1
     for VICFrame, label, filt in tqdm(dataset):
-        '''
         idx += 1
-        if idx > 1:
-            break
-        '''
         # if idx % 10 != 0:
         #     continue
         try:
-            # print(pcolor(f'{dataset.data[idx][0]}', 'yellow'))
             veh_id = dataset.data[idx][0]["vehicle_pointcloud_path"].split("/")[-1].replace(".pcd", "")
         except Exception:
             veh_id = VICFrame["vehicle_pointcloud_path"].split("/")[-1].replace(".pcd", "")
@@ -62,6 +58,7 @@ def eval_vic(args, dataset, model, evaluator):
 
 def eval_single(args, dataset, model, evaluator):
     logging.warnging(f'eval_single(..)')
+    print(colored(f'eval_single(args={type(args)}, \n\tdataset={type(dataset)}, \n\tmodel={type(model)}, \n\tevaluator={type(evaluator)})', 'yellow'))
     idx = -1
     for frame, label, filt in tqdm(dataset):
         idx += 1
@@ -81,6 +78,7 @@ def eval_single(args, dataset, model, evaluator):
 def print_configs(args):
     for v in vars(args):
         logging.info(f'{v:<20s}: {vars(args)[v]}')
+        print(colored(f'{v:<20s}: {vars(args)[v]}', 'blue'))
 
 
 if __name__ == "__main__":
@@ -142,4 +140,4 @@ if __name__ == "__main__":
 
     time_end_eval = time.time()
     logging.warning(f'eval.py elapsed {time_end_eval - time_beg_eval:.6f} seconds')
-    print(pcolor(f'eval.py elapsed {time_end_eval - time_beg_eval:.6f} seconds', 'yellow'))
+    print(colored(f'eval.py elapsed {time_end_eval - time_beg_eval:.6f} seconds', 'yellow'))

@@ -137,8 +137,8 @@ def setup_log(log_name, same_place=False):
         format=medium_format_new
     )
 
-    logging.info('@{} created at {}'.format(get_log_file, dt_now))
-    print('@{} created at {}'.format(get_log_file, dt_now))
+    logging.info(f'@{get_log_file} created at {dt_now}', 'yellow')
+    print(colored('@{get_log_file} created at {dt_now}', 'yellow'))
 
     repo, hexsha, is_dirty = git_info()
     logging.info(f'  {type(repo)}')
@@ -154,7 +154,7 @@ def setup_log(log_name, same_place=False):
         logging.info(f'  git diff\n{git_diff.decode()}')
         print(f'  git diff\n{git_diff.decode()}')
 
-    print('\n===== log_file: {}\n'.format(get_log_file))
+    print(colored('\n===== log_file: {get_log_file}\n', 'yellow'))
 
 
 trace_logger = logging.getLogger(__name__)

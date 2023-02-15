@@ -16,6 +16,16 @@ VEHICLE_MODEL_NAME="vic3d_latefusion_veh_pointpillars_a70fa05506bf3075583454f58b
 
 SPLIT_DATA_PATH="../data/split_datas/cooperative-split-data.json"
 
+function text_info() {
+  echo -e "\e[32m# $1\e[39m"
+}
+text_info "param_1: $1"
+text_info "param_2: $2"
+text_info "param_3: $3"
+text_info "param_4: $4"
+text_info "param_5: $5"
+text_info "param_6: $6"
+
 # srun --gres=gpu:a100:1 --time=1-0:0:0 --job-name "dair-v2x" \
 CUDA_VISIBLE_DEVICES=$1
 FUSION_METHOD=$2
@@ -27,7 +37,7 @@ python eval.py \
   --input $DATA \
   --output $OUTPUT \
   --model $FUSION_METHOD \
-  --dataset vic-sync \
+  --dataset vic-async \
   --k $DELAY_K \
   --split val \
   --split-data-path $SPLIT_DATA_PATH \
@@ -46,4 +56,5 @@ python eval.py \
   --debug \
   --save-image \
   --save-point-cloud \
+  --dataset vic-sync \
 '
