@@ -17,6 +17,153 @@
 
 <!-- ========== ========== ========== ========== ========== -->
 
+# check benchmark
+
+- eval.py params:
+  - **model:**
+
+    ```python
+    # /mnt/itti-dev/DAIR-V2X/v2x/models/__init__.py
+    SUPPROTED_MODELS = {
+        "single_side": SingleSide,
+        "late_fusion": LateFusion,
+        "early_fusion": EarlyFusion,
+        "veh_only": VehOnly,
+        "inf_only": InfOnly,
+    }
+    ```
+
+  - **dataset:**
+
+    ```python
+    # /mnt/itti-dev/DAIR-V2X/v2x/dataset/__init__.py
+    SUPPROTED_DATASETS = {
+        "dair-v2x-v": DAIRV2XV,
+        "dair-v2x-i": DAIRV2XI,
+        "vic-sync": VICSyncDataset,
+        "vic-async": VICAsyncDataset,
+    }
+    ```
+
+  - **sensortype:**
+    - camera
+    - lidar
+
+## [ ] sv3d-inf / imvoxelnet
+
+```bash
+conda activate openmmlab_dair
+export dev_home=/mnt/itti-dev/DAIR-V2X
+cd ${dev_home}
+
+rm -r ./cache
+cd v2x
+
+DATA="../data/DAIR-V2X/single-infrastructure-side"
+OUTPUT="../cache/sv3d-inf-imvoxelnet"
+rm -r $OUTPUT
+rm -r ../cache
+mkdir -p $OUTPUT/result
+mkdir -p $OUTPUT/inf/lidar
+mkdir -p $OUTPUT/veh/lidar
+
+python eval.py \
+  --input $DATA \
+  --output $OUTPUT \
+  --model single_side \
+  --dataset dair-v2x-i \
+  --k 2 \
+  --split val \
+  --split-data-path ../data/split_datas/single-infrastructure-split-data.json \
+  --config-path ../configs/sv3d-inf/imvoxelnet/trainval_config.py \
+  --model-path  ../configs/sv3d-inf/imvoxelnet/sv3d_inf_imvoxelnet_747eb31f1271684a4fb8fc0ba4a3447e.pth \
+  --device 0 \
+  --pred-class car \
+  --sensortype camera \
+  --eval-single \
+  --extended-range 0 -39.68 -3 100 39.68 1
+```
+
+## [x] sv3d-inf / pointpillars
+
+```bash
+conda activate openmmlab_dair
+export dev_home=/mnt/itti-dev/DAIR-V2X
+cd ${dev_home}
+
+rm -r ./cache
+cd v2x
+
+DATA="../data/DAIR-V2X/single-infrastructure-side"
+OUTPUT="../cache/sv3d-inf-pointpillars"
+rm -r $OUTPUT
+rm -r ../cache
+mkdir -p $OUTPUT/result
+mkdir -p $OUTPUT/inf/lidar
+mkdir -p $OUTPUT/veh/lidar
+
+python eval.py \
+  --input $DATA \
+  --output $OUTPUT \
+  --model single_side \
+  --dataset dair-v2x-i \
+  --k 2 \
+  --split val \
+  --split-data-path ../data/split_datas/single-infrastructure-split-data.json \
+  --config-path ../configs/sv3d-inf/pointpillars/trainval_config.py \
+  --model-path  ../configs/sv3d-inf/pointpillars/sv3d_inf_pointpillars_bef39ec99769ac03d0e6b2c5ff6a0ef7.pth \
+  --device 0 \
+  --pred-class car \
+  --sensortype lidar \
+  --eval-single \
+  --extended-range 0 -39.68 -3 100 39.68 1
+
+# https://github.com/AIR-THU/DAIR-V2X/tree/main/configs/sv3d-inf/pointpillars
+car 3d IoU threshold 0.30, Average Precision = 47.45
+car 3d IoU threshold 0.50, Average Precision = 47.41
+car 3d IoU threshold 0.70, Average Precision = 46.38
+car bev IoU threshold 0.30, Average Precision = 47.46
+car bev IoU threshold 0.50, Average Precision = 47.44
+car bev IoU threshold 0.70, Average Precision = 47.16
+eval.py elapsed 481.931563 seconds
+```
+
+## [x] vic3d / late-fusion-pointcloud / pointpillars
+
+```bash
+# GT: https://github.com/AIR-THU/DAIR-V2X/blob/main/configs/vic3d/late-fusion-pointcloud/pointpillars/README.md
+
+#  bash scripts/eval_lidar_late_fusion_pointpillars.sh 0 late_fusion 0 0 100
+car 3d IoU threshold 0.30, Average Precision = 65.55
+car 3d IoU threshold 0.50, Average Precision = 55.97       56.06
+car 3d IoU threshold 0.70, Average Precision = 40.01
+car bev IoU threshold 0.30, Average Precision = 67.39
+car bev IoU threshold 0.50, Average Precision = 61.99      62.06
+car bev IoU threshold 0.70, Average Precision = 54.10
+Average Communication Cost = 912.03 Bytes
+eval.py elapsed 772.612265 seconds
+
+#  bash scripts/eval_lidar_late_fusion_pointpillars.sh 0 late_fusion 1 0 100
+car 3d IoU threshold 0.30, Average Precision = 64.51
+car 3d IoU threshold 0.50, Average Precision = 54.02       53.80
+car 3d IoU threshold 0.70, Average Precision = 37.58
+car bev IoU threshold 0.30, Average Precision = 66.49
+car bev IoU threshold 0.50, Average Precision = 60.13      59.94
+car bev IoU threshold 0.70, Average Precision = 51.10
+Average Communication Cost = 907.86 Bytes
+eval.py elapsed 692.326605 seconds
+
+#  bash scripts/eval_lidar_late_fusion_pointpillars.sh 0 late_fusion 2 0 100
+car 3d IoU threshold 0.30, Average Precision = 63.39
+car 3d IoU threshold 0.50, Average Precision = 53.32       52.43
+car 3d IoU threshold 0.70, Average Precision = 37.25
+car bev IoU threshold 0.30, Average Precision = 65.25
+car bev IoU threshold 0.50, Average Precision = 59.14      58.10
+car bev IoU threshold 0.70, Average Precision = 50.50
+Average Communication Cost = 898.14 Bytes
+eval.py elapsed 697.048728 seconds
+```
+
 # conda / pip install
 
 ```bash

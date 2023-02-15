@@ -211,6 +211,7 @@ data = dict(
             classes=class_names,
             pcd_limit_range=point_cloud_range,
             test_mode=False,
+            # box_type_3d="camera",
         ),
     ),
     val=dict(
@@ -224,6 +225,7 @@ data = dict(
         classes=class_names,
         pcd_limit_range=point_cloud_range,
         test_mode=True,
+        # box_type_3d="camera",
     ),
     test=dict(
         type=dataset_type,
@@ -236,6 +238,7 @@ data = dict(
         classes=class_names,
         pcd_limit_range=point_cloud_range,
         test_mode=True,
+        # box_type_3d="camera",
     ),
 )
 
