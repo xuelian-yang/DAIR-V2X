@@ -199,7 +199,8 @@ class PathConfig:
 
 def get_path():
     if isLinux:
-        str_root = '/mnt/datax/Datasets/DAIR-V2X-Extracted/cooperative-vehicle-infrastructure-example/infrastructure-side'
+        # @ITTI01P720
+        str_root = '/mnt/itti-data/DAIR-V2X/cooperative-vehicle-infrastructure-example_10960098920239104/cooperative-vehicle-infrastructure-example/infrastructure-side'
     else:
         str_root = 'D:/0-DAIR-V2X-Dataset/DAIR-V2X-C-Example/cooperative-vehicle-infrastructure-example/infrastructure-side'
     dict_name = {
